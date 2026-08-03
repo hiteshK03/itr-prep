@@ -12,8 +12,9 @@ mapped on its own header, and named in the census with its row count, whether or
 anything came out of it.
 
 `price_aliases` then ranked "Purchase Price" above "Purchase Date FMV", so an ESPP lot was
-priced at what was PAID rather than at fair market value. Under section 49(2AA), where a
-perquisite has been charged under section 17(2)(vi), the cost of acquisition is the FMV
+priced at what was PAID rather than at fair market value. Where a perquisite has been
+charged -- s.73(1) with s.17(1)(d) of the Income-tax Act, 2025, s.49(2AA) with
+s.17(2)(vi) of the 1961 Act -- the cost of acquisition is the FMV
 that perquisite was computed on. The ESPP discount is already taxed as salary through
 Form 16, so pricing the lot at the discounted figure taxes the same discount a second time
 as a capital gain.
@@ -496,8 +497,9 @@ def test_a_paid_price_only_section_says_so() -> None:
         check("priced at what was paid, because nothing better is in the file",
               result.transactions[0].price_usd == Decimal("41.225"),
               str(result.transactions[0].price_usd))
-        check("and the run says the cost basis should be the FMV instead",
-              any("49(2AA)" in w and "17(2)(vi)" in w for w in result.warnings),
+        check("and the run says the cost basis should be the FMV instead, under both Acts",
+              any("49(2AA)" in w and "17(2)(vi)" in w
+                  and "73(1)" in w and "17(1)(d)" in w for w in result.warnings),
               "; ".join(result.warnings))
         check("naming the column it had to fall back to",
               any("'Purchase Price'" in w for w in result.warnings),
@@ -555,7 +557,7 @@ def test_the_nested_rsu_shape() -> None:
         check("exactly one acquisition and one disposal came off the sheet",
               [t.txn_type for t in vests] == [TXN_BUY, TXN_SELL],
               str(rows_of(vests)))
-        check("the acquisition is the gross vested count, which s.17(2)(vi) charges on",
+        check("the acquisition is the gross vested count, which the perquisite is charged on",
               vests[0].quantity == Decimal(50), str(vests[0].quantity))
         check("the disposal is 'Shares Traded for taxes', not 'Withheld Qty.'",
               vests[1].quantity == Decimal(16), str(vests[1].quantity))

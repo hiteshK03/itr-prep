@@ -25,12 +25,40 @@ and re-verify it against the source if it is behind:
 ```
 
 `docs/ANNUAL-REVIEW.md` is the checklist and explains what specifically to re-check for
-each entry. Nothing is currently marked `contested`; if an entry ever is, it must not be
-relied on without being settled first.
+each entry. One entry is currently marked `contested` —
+`specified_mf_debt_threshold_pct` in `rules/AY2027-28.json` — and a `contested` entry must
+not be relied on without being settled first. Do not clear the flag without a primary
+source; see `docs/KNOWN-ISSUES.md`.
 
 The tool refuses to build a filing for an assessment year the registry does not cover, and
 warns loudly when it is asked for an earlier one than the registry describes. Do not
 "fix" either behaviour by loosening it.
+
+## The Act changed. Do not renumber anything without deciding.
+
+The **Income-tax Act, 2025** came into force on 1 April 2026 and repealed the Income-tax
+Act, 1961 (s.536(1)). Almost every section number in this repository moved. But s.536(2)(c)
+keeps the old Act applying to any tax year beginning before that date, so **AY 2026-27 is
+permanently a 1961-Act year** and the return this tool actually filed was filed under the
+old Act.
+
+That makes a blanket find-and-replace of section numbers a way of falsifying the record.
+Every citation needs a decision:
+
+- **Historical** — describing what was filed for AY 2026-27, or the AY 2026-27 registry
+  itself. **Keep the 1961-Act citation.** `docs/RUNBOOK_AY2026-27.md` and the dated entries
+  in `CHANGELOG.md` are historical throughout.
+- **Forward-looking** — guidance for AY 2027-28 onward, or a statement written as a timeless
+  truth. **Cite the Act of 2025**, and give the 1961-Act number alongside it where a reader
+  needs the bridge.
+
+The **Black Money Act, 2015 is separate legislation and is not renumbered by any of this.**
+Section 43 is still section 43. Do not touch those citations.
+
+`rules/AY2027-28.json` records the old → new mapping on every entry in an `act_transition`
+block, and `docs/ANNUAL-REVIEW.md` has the readable table. `tests/test_rules_registry.py`
+fails if the old registry stops citing the Income-tax Act, 1961, if the new one stops
+recording its transitions, or if an AY 2026-27 entry goes missing from AY 2027-28.
 
 ## Source discipline
 
@@ -105,6 +133,13 @@ The README's Roadmap names Indian mutual funds and the other ITR forms as direct
 author may take. That is intent and it does not widen this rule: until one of them is actually
 built, verified and documented, a change reaching outside foreign assets still does not belong
 here.
+
+One qualification, added with `rules/AY2027-28.json`. That registry carries **cited entries
+for Indian mutual fund capital gains** — grandfathering, Specified Mutual Funds, both rates,
+holding periods and FIFO — because the research was done and a cited entry is cheaper to
+keep than to re-derive. **No code reads them and no pipeline computes them.** They are
+research committed in a form a test can check, not a feature. Building the pipeline is still
+a scope decision that has not been taken.
 
 ## Tests
 

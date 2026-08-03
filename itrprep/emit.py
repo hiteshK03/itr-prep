@@ -13,6 +13,7 @@ particular look like bugs and are not:
 from __future__ import annotations
 
 import json
+import textwrap
 
 from .models import Account, Issuer
 from .positions import FaRow, YearTotals
@@ -226,8 +227,46 @@ def dump_json(document: dict, path: str) -> None:
         fh.write("\n")
 
 
+def _foreign_tax_credit_lines(year_rules) -> list[str]:
+    """The foreign tax credit deadline paragraph, read out of the rules registry.
+
+    This used to be four hardcoded lines naming Form 67, rule 128(9) and section 139.
+    All three were repealed with the Income-tax Act, 1961: from tax year 2026-27 the
+    statement is Form No. 44 under rule 76 of the Income-tax Rules, 2026 and the return
+    is furnished under section 263. A build for AY 2026-27 still has to print the old
+    ones, because that year is still decided under the old Act -- so neither set can be
+    a constant here, and both come from the registry for the year being filed.
+
+    The entry was renamed across the change of Act (`form_67_deadline` became
+    `foreign_tax_credit_statement_deadline`), which is why both names are tried.
+    """
+    if year_rules is None:
+        return []
+    deadline = None
+    for key in ("foreign_tax_credit_statement_deadline", "form_67_deadline"):
+        if key in year_rules.entries:
+            deadline = year_rules.value(key)
+            break
+    if not isinstance(deadline, dict):
+        return []
+    form = deadline.get("form", "The foreign tax credit statement")
+    rule = deadline.get("rule", "")
+    date = deadline.get("date", "")
+    sentences = [f"{form} is due on or before {date}" + (f", under {rule}" if rule else "")]
+    if deadline.get("conditional_on"):
+        sentences.append(f"conditional on {deadline['conditional_on']}")
+    paragraph = ", ".join(sentences) + "."
+    if deadline.get("updated_return_basis"):
+        paragraph += (f" On an UPDATED return the proviso is stricter: {form} must be "
+                      f"furnished {deadline['updated_return_basis']}, not after.")
+    return textwrap.wrap(paragraph, width=88)
+
+
 def summarise_other_schedules(
-    totals: YearTotals, fy_label: str, long_term_months: int = 24
+    totals: YearTotals,
+    fy_label: str,
+    long_term_months: int = 24,
+    year_rules=None,
 ) -> str:
     """Human-readable figures for the schedules Schedule FA does not cover.
 
@@ -238,7 +277,13 @@ def summarise_other_schedules(
     `long_term_months` is the holding period the split was actually computed on, passed
     in from the rules registry so that the two labels here cannot drift away from the
     threshold the arithmetic used.
+
+    `year_rules` is the loaded registry for the year being filed. The foreign tax credit
+    paragraph is rendered from it rather than written here, because the form, the rule
+    and the deadline all changed with the Income-tax Act, 2025 and this text is printed
+    for whichever year the user asked for.
     """
+    credit = _foreign_tax_credit_lines(year_rules)
     lines = [
         f"Aggregates for FY {fy_label} (financial year, NOT the Schedule FA calendar year)",
         "",
@@ -252,16 +297,13 @@ def summarise_other_schedules(
         f"    Cost of acquisition         : INR {totals.ltcg_cost_inr:,}",
         f"    Net long-term gain          : INR {totals.ltcg_gain_inr:,}",
         "",
-        "Schedule OS / FSI / TR and Form 67 -- foreign dividends:",
+        "Schedule OS / FSI / TR and the foreign tax credit statement -- foreign dividends:",
         f"    Gross dividend  : USD {totals.dividends_usd:.2f}  "
         f"= INR {totals.dividends_inr:,}",
         f"    US tax withheld : USD {totals.dividend_tax_withheld_usd:.2f}  "
         f"= INR {totals.dividend_tax_withheld_inr:,}",
         "",
         "The withheld tax is the figure to claim as foreign tax credit in Schedule TR.",
-        "Form 67 is due on or before the END OF THE ASSESSMENT YEAR -- Rule 128(9) as",
-        "substituted by CBDT Notification 100/2022 -- provided the return itself is filed",
-        "within the s.139(1) or s.139(4) window. On an UPDATED return under s.139(8A) the",
-        "proviso is stricter: Form 67 must be furnished on or before that return, not after.",
+        *credit,
     ]
     return "\n".join(lines)

@@ -15,6 +15,13 @@ Sources:
 - `ITR2_Validation_Rules_AY2026-27_V1.0.pdf` (text: `vba/itr2_valid_clean.txt`)
 - `ITD_StepByStep_FA_FSI.pdf` (text: `vba/fa_guide_pdfminer.txt`)
 
+These are AY 2026-27 and earlier artefacts, so their statutory references are to the
+Income-tax Act, 1961 — correctly, since those years are still decided under it by
+s.536(2)(c) of the Income-tax Act, 2025. Do not renumber them. `Part A Gen_139(8A)` in
+particular is a literal worksheet name inside the published utility, not a citation.
+"Validation rule 746" is likewise a rule number in the department's validation-rules PDF,
+nothing to do with the Income-tax Rules.
+
 ---
 
 ## 1. There are TWO import entry points, and they read DIFFERENT JSON shapes

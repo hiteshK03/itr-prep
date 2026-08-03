@@ -184,6 +184,8 @@
 
     "form_67_deadline": {
       "value": {
+        "form": "Form No. 67",
+        "rule": "rule 128(9) of the Income-tax Rules, 1962",
         "basis": "end_of_the_assessment_year",
         "date": "2027-03-31",
         "conditional_on": "the return for the assessment year being furnished within the time specified under section 139(1) or section 139(4)",

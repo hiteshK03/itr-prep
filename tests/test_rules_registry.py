@@ -4,16 +4,26 @@ A registry of statutory figures is only worth having if something stops it rotti
 comment saying "re-verify this each year" gets skipped; a failing test does not. So this
 suite is the enforcement half of `rules/AY<year>.json`:
 
-  - every entry cites an official source, and cites nothing else
+  - every entry in EVERY registry cites an official source, and cites nothing else
   - every entry declares whether it is `stable` or `annual`, consistently with the
     assessment year it is stated for
   - no `annual` entry has been left behind by the registry it lives in
   - the loader refuses to run ahead of the registry, and says so when it runs behind
   - the figures the code actually computes with are the figures in the registry
   - docs/ANNUAL-REVIEW.md still lists every entry that needs re-verifying
+  - the change of statute is recorded rather than applied by find-and-replace
 
-The last two are the ones that catch real drift: a constant reintroduced at a call site,
-or an entry added to the registry and never added to the checklist.
+"Every registry" is load-bearing rather than tidiness. These checks used to run against
+the newest registry alone, which was fine while there was one; adding rules/AY2027-28.json
+would have quietly retired the AY 2026-27 file from the suite on the day a second one
+appeared.
+
+The last block is the one specific to the change of Act. AY 2026-27 was filed under the
+Income-tax Act, 1961 and AY 2027-28 is the first year under the Income-tax Act, 2025, so
+the two registries must cite DIFFERENT statutes, each one must go on citing its own, and
+every AY 2027-28 entry must record which AY 2026-27 entry it descends from. A future
+contributor "fixing" the old registry's section numbers to match the new Act would be
+falsifying the record of a filed return, and this is what stops them.
 
 Network checks are opt-in, because every other suite here runs offline:
 
@@ -32,9 +42,10 @@ from decimal import Decimal
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from itrprep import positions, rules, threshold
+from itrprep import emit, positions, rules, threshold
 from itrprep.fx import FxRates
 from itrprep.models import TXN_BUY, TXN_SELL, Transaction
+from itrprep.positions import YearTotals
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RULES_DIR = os.path.join(ROOT, "rules")
@@ -52,6 +63,37 @@ SECONDARY_HOSTS = (
 
 # A search page is not a citation: it is a promise that a citation exists somewhere.
 NOT_A_CITATION = ("/search", "?q=", "?s=", "google.", "bing.", "duckduckgo")
+
+# Which statute each assessment year is governed by. The Income-tax Act, 2025 came into
+# force on 1 April 2026 (its own s.1(3)) and repealed the 1961 Act (s.536(1)), but
+# s.536(2)(c) keeps the repealed Act applying to proceedings for any tax year beginning
+# before that date -- so AY 2026-27 is, permanently, a 1961-Act year.
+FIRST_AY_UNDER_THE_2025_ACT = 2027
+ACT_1961 = "Income-tax Act, 1961"
+ACT_2025 = "Income-tax Act, 2025"
+
+# The vocabulary an `act_transition` block may use. A new value has to be added here
+# deliberately, so that "we did not think about it" cannot masquerade as a classification.
+ACT_TRANSITION_CHANGES = (
+    "renumbered_only",
+    "renumbered_and_substantive",
+    "unchanged_separate_legislation",
+    "new_entry",
+)
+
+# Two findings that cost real money if an implementation forgets them, so they live in the
+# registry as structured data rather than in a memo. Each names the entry that carries it
+# and a phrase that must survive any rewrite of the prose around it.
+REQUIRED_TRAPS = {
+    "amfi_nav_column": (
+        "mf_grandfathering_fmv_basis_unlisted",
+        ("Repurchase Price", "Net Asset Value", "4,756"),
+    ),
+    "specified_mf_overrides_holding_period": (
+        "specified_mf_deemed_short_term",
+        ("Irrespective", "holding_days", "1 April 2023"),
+    ),
+}
 
 failures: list[str] = []
 
@@ -74,6 +116,17 @@ def _is_iso_date(value: str) -> bool:
     except (ValueError, TypeError):
         return False
     return True
+
+
+def _raw_entries(path: str) -> dict:
+    """The entries as they sit on disk.
+
+    `rules.load` returns typed entries and drops the keys it has no field for, which is
+    the right call for the loader and the wrong one here: `act_transition` and
+    `implementation_trap` are checked precisely because nothing else reads them.
+    """
+    with open(path, encoding="utf-8") as fh:
+        return json.load(fh).get("entries", {})
 
 
 def main() -> int:
@@ -111,76 +164,179 @@ def main() -> int:
     registry = rules.load(rules_dir=RULES_DIR)
     print(f"  note  newest registry is AY {registry.assessment_year}, "
           f"{len(registry.entries)} entries")
+    all_registries = {
+        label: rules.load(label, rules_dir=RULES_DIR) for label in sorted(found)
+    }
+    check("every registry on disk loads",
+          len(all_registries) == len(found), f"{len(all_registries)} of {len(found)}")
+    for label, loaded in sorted(all_registries.items()):
+        print(f"  note  AY {label}: {len(loaded.entries)} entries, "
+              f"{len(loaded.annual_entries())} annual")
 
     # ------------------------------------------------------------ citations
     # The rule india-itr-copilot gets right, and the whole reason a registry beats a
-    # constant: an entry with no official source fails, every time, for everyone.
+    # constant: an entry with no official source fails, every time, for everyone. Run
+    # against every registry, not just the newest -- a filed year's citations have to go
+    # on being checkable after a later year has been added.
     print("\n[citations]")
-    for key, entry in sorted(registry.entries.items()):
-        check(f"{key}: has at least one source", bool(entry.sources))
-        urls = [(s.get("url") or "").strip() for s in entry.sources]
-        authorities = [(s.get("authority") or "").strip() for s in entry.sources]
-        check(f"{key}: every source names its authority", all(authorities),
-              str(entry.sources))
-        check(f"{key}: every source has a URL", all(urls), str(urls))
-        check(f"{key}: at least one source is on an official domain",
-              any(any(_host(u).endswith(h) or _host(u) == h
-                      for h in rules.OFFICIAL_HOSTS) for u in urls if u),
-              str([_host(u) for u in urls if u]))
-        offenders = [
-            u for u in urls
-            if u and any(bad in _host(u) for bad in SECONDARY_HOSTS)
-        ]
-        check(f"{key}: cites no secondary aggregator as authority",
-              not offenders, str(offenders))
-        weak = [u for u in urls if u and any(bad in u.lower() for bad in NOT_A_CITATION)]
-        check(f"{key}: no source is a search result", not weak, str(weak))
-        check(f"{key}: names the provision it comes from", bool(entry.statute.strip()))
-        check(f"{key}: says what to re-check", bool(entry.check.strip()))
-        check(f"{key}: verified_on is an ISO date", _is_iso_date(entry.verified_on),
-              entry.verified_on)
+    for label, loaded in sorted(all_registries.items()):
+        for key, entry in sorted(loaded.entries.items()):
+            tag = f"{label} {key}"
+            check(f"{tag}: has at least one source", bool(entry.sources))
+            urls = [(s.get("url") or "").strip() for s in entry.sources]
+            authorities = [(s.get("authority") or "").strip() for s in entry.sources]
+            check(f"{tag}: every source names its authority", all(authorities),
+                  str(entry.sources))
+            check(f"{tag}: every source has a URL", all(urls), str(urls))
+            check(f"{tag}: at least one source is on an official domain",
+                  any(any(_host(u).endswith(h) or _host(u) == h
+                          for h in rules.OFFICIAL_HOSTS) for u in urls if u),
+                  str([_host(u) for u in urls if u]))
+            offenders = [
+                u for u in urls
+                if u and any(bad in _host(u) for bad in SECONDARY_HOSTS)
+            ]
+            check(f"{tag}: cites no secondary aggregator as authority",
+                  not offenders, str(offenders))
+            weak = [
+                u for u in urls if u and any(bad in u.lower() for bad in NOT_A_CITATION)
+            ]
+            check(f"{tag}: no source is a search result", not weak, str(weak))
+            check(f"{tag}: names the provision it comes from", bool(entry.statute.strip()))
+            check(f"{tag}: says what to re-check", bool(entry.check.strip()))
+            check(f"{tag}: verified_on is an ISO date", _is_iso_date(entry.verified_on),
+                  entry.verified_on)
 
     # ------------------------------------------------------- review classes
     print("\n[review classes]")
-    for key, entry in sorted(registry.entries.items()):
-        check(f"{key}: review class is known", entry.review in rules.REVIEW_CLASSES,
-              entry.review)
-        if entry.review == rules.REVIEW_STABLE:
-            check(f"{key}: a stable entry applies to every assessment year",
-                  entry.applies_to == rules.APPLIES_TO_ALL,
-                  entry.applies_to)
-        else:
-            check(f"{key}: an annual entry names the assessment year it is stated for",
-                  entry.applies_to != rules.APPLIES_TO_ALL
-                  and "-" in entry.applies_to,
-                  entry.applies_to)
-    annual = registry.annual_entries()
-    check("the registry has both stable and annual entries",
-          bool(annual) and len(annual) < len(registry.entries),
-          f"{len(annual)} annual of {len(registry.entries)}")
+    for label, loaded in sorted(all_registries.items()):
+        for key, entry in sorted(loaded.entries.items()):
+            tag = f"{label} {key}"
+            check(f"{tag}: review class is known", entry.review in rules.REVIEW_CLASSES,
+                  entry.review)
+            if entry.review == rules.REVIEW_STABLE:
+                check(f"{tag}: a stable entry applies to every assessment year",
+                      entry.applies_to == rules.APPLIES_TO_ALL,
+                      entry.applies_to)
+            else:
+                check(f"{tag}: an annual entry names the assessment year it is stated for",
+                      entry.applies_to != rules.APPLIES_TO_ALL
+                      and "-" in entry.applies_to,
+                      entry.applies_to)
+        loaded_annual = loaded.annual_entries()
+        check(f"{label}: has both stable and annual entries",
+              bool(loaded_annual) and len(loaded_annual) < len(loaded.entries),
+              f"{len(loaded_annual)} annual of {len(loaded.entries)}")
+        # A contested entry is a live disagreement, not a footnote. It has to say so
+        # where `itr-prep rules` will print it.
+        for key, entry in sorted(loaded.entries.items()):
+            if entry.contested:
+                check(f"{label} {key}: a contested entry explains the disagreement",
+                      "CONTESTED" in entry.check.upper(), entry.check[:80])
 
     # ------------------------------------------------------------ staleness
-    # The registry must not have rotted against its own assessment year. Once a later
-    # registry is added, this is what fails if an annual entry was copied across
-    # without being re-verified.
+    # A registry must not have rotted against its own assessment year. This is what fails
+    # if an annual entry was copied into a later registry without being re-verified.
     print("\n[staleness]")
-    stale = registry.stale_for(registry.assessment_year)
-    check("no annual entry is older than the registry it lives in",
-          not stale, str([e.key for e in stale]))
-    later = f"{int(registry.assessment_year.split('-')[0]) + 1}-" \
-            f"{(int(registry.assessment_year.split('-')[0]) + 2) % 100:02d}"
-    check("every annual entry is reported stale against the following year",
-          {e.key for e in registry.stale_for(later)} == {e.key for e in annual},
-          str([e.key for e in registry.stale_for(later)]))
-    check("no stable entry is ever reported stale",
-          all(e.review == rules.REVIEW_ANNUAL for e in registry.stale_for(later)))
-    banner = registry.staleness_warning(later)
-    check("the staleness banner names every stale entry",
-          all(e.key in banner for e in annual))
-    check("the staleness banner carries each entry's re-check instruction",
-          all(e.check[:40] in banner for e in annual))
-    check("there is no banner when nothing is stale",
-          registry.staleness_warning(registry.assessment_year) == "")
+    for label, loaded in sorted(all_registries.items()):
+        loaded_annual = loaded.annual_entries()
+        stale = loaded.stale_for(loaded.assessment_year)
+        check(f"{label}: no annual entry is older than the registry it lives in",
+              not stale, str([e.key for e in stale]))
+        start = int(loaded.assessment_year.split("-")[0])
+        later = f"{start + 1}-{(start + 2) % 100:02d}"
+        check(f"{label}: every annual entry is reported stale against the following year",
+              {e.key for e in loaded.stale_for(later)}
+              == {e.key for e in loaded_annual},
+              str([e.key for e in loaded.stale_for(later)]))
+        check(f"{label}: no stable entry is ever reported stale",
+              all(e.review == rules.REVIEW_ANNUAL for e in loaded.stale_for(later)))
+        banner = loaded.staleness_warning(later)
+        check(f"{label}: the staleness banner names every stale entry",
+              all(e.key in banner for e in loaded_annual))
+        check(f"{label}: the staleness banner carries each re-check instruction",
+              all(e.check[:40] in banner for e in loaded_annual))
+        check(f"{label}: there is no banner when nothing is stale",
+              loaded.staleness_warning(loaded.assessment_year) == "")
+
+    # --------------------------------------------------------- act transition
+    # AY 2026-27 was filed under the Income-tax Act, 1961. AY 2027-28 is the first year
+    # under the Income-tax Act, 2025. Both statements have to keep being true in the
+    # tree, which means the old registry must go on citing the old Act and the new one
+    # must not -- and every new entry must say which old entry it descends from.
+    print("\n[act transition]")
+    for label, loaded in sorted(all_registries.items()):
+        start = int(loaded.assessment_year.split("-")[0])
+        governed_by_2025 = start >= FIRST_AY_UNDER_THE_2025_ACT
+        blob = " ".join(
+            entry.statute + " " + " ".join(entry.source_lines())
+            for entry in loaded.entries.values()
+        )
+        if governed_by_2025:
+            check(f"{label}: cites the Income-tax Act, 2025", ACT_2025 in blob)
+            check(f"{label}: every entry records its act transition",
+                  all("act_transition" in raw
+                      for raw in _raw_entries(found[label]).values()),
+                  str([k for k, raw in _raw_entries(found[label]).items()
+                       if "act_transition" not in raw]))
+            raw_entries = _raw_entries(found[label])
+            for key, raw in sorted(raw_entries.items()):
+                move = raw.get("act_transition") or {}
+                check(f"{label} {key}: the transition names old and new provisions",
+                      bool((move.get("old") or "").strip())
+                      and bool((move.get("new") or "").strip()), str(move))
+                check(f"{label} {key}: the transition classifies the change",
+                      move.get("change") in ACT_TRANSITION_CHANGES,
+                      str(move.get("change")))
+        else:
+            check(f"{label}: still cites the Income-tax Act, 1961", ACT_1961 in blob,
+                  "a filed year must keep citing the Act it was filed under")
+
+    # Nothing may be dropped on the way across. Every AY 2026-27 entry has to be
+    # accounted for by name in the successor registry, even if only to be renamed.
+    older = all_registries.get("2026-27")
+    newer = all_registries.get("2027-28")
+    if older and newer:
+        descends_from = {
+            (raw.get("act_transition") or {}).get("ay2026_27_key")
+            for raw in _raw_entries(found["2027-28"]).values()
+        }
+        orphaned = [k for k in older.entries if k not in descends_from]
+        check("every AY 2026-27 entry is accounted for in AY 2027-28",
+              not orphaned, str(orphaned))
+        renamed = [
+            (raw["act_transition"]["ay2026_27_key"], key)
+            for key, raw in sorted(_raw_entries(found["2027-28"]).items())
+            if (raw.get("act_transition") or {}).get("ay2026_27_key")
+            and raw["act_transition"]["ay2026_27_key"] != key
+        ]
+        print(f"  note  {len(renamed)} entr(ies) renamed across the Act change: "
+              f"{', '.join(f'{a} -> {b}' for a, b in renamed) or 'none'}")
+        # The Black Money Act is separate legislation and the 2025 Act does not touch it,
+        # so its entries must be marked as carried over rather than as renumbered.
+        for key in ("black_money_s43_penalty_inr", "black_money_relief_threshold_inr"):
+            move = (_raw_entries(found["2027-28"])[key].get("act_transition") or {})
+            check(f"{key}: recorded as separate legislation, not renumbered",
+                  move.get("change") == "unchanged_separate_legislation",
+                  str(move.get("change")))
+
+    # ------------------------------------------------------ encoded traps
+    # Two findings that produce a plausible-looking wrong number rather than an error.
+    # They belong in the registry as structured data, where an implementer will meet
+    # them, rather than in a memo nobody re-reads.
+    print("\n[encoded traps]")
+    trap_source = _raw_entries(found["2027-28"]) if "2027-28" in found else {}
+    for name, (key, phrases) in sorted(REQUIRED_TRAPS.items()):
+        raw = trap_source.get(key, {})
+        trap = raw.get("implementation_trap") or {}
+        check(f"{name}: carried by {key}", trap.get("name") == name, str(trap.get("name")))
+        check(f"{name}: says what goes wrong", bool((trap.get("what") or "").strip()))
+        check(f"{name}: says what to do instead", bool((trap.get("so") or "").strip()))
+        check(f"{name}: is marked as a silent wrong answer",
+              trap.get("severity") == "silent_wrong_answer", str(trap.get("severity")))
+        body = f"{trap.get('what', '')} {trap.get('so', '')}"
+        for phrase in phrases:
+            check(f"{name}: still names {phrase!r}", phrase in body)
 
     # ------------------------------------------------------------- coverage
     # "Silently computing AY 2027-28 against AY 2026-27 rates" is the failure this
@@ -277,23 +433,63 @@ def main() -> int:
         check("the refusal says to add it cited rather than hardcode it",
               "hardcoding" in str(exc))
 
+    # The other-schedules summary used to end in four hardcoded lines naming Form 67 and
+    # rule 128(9). Printed for a 2025-Act year they would assert repealed provisions, so
+    # the paragraph is rendered from the registry -- and this is what stops it being
+    # written back as a constant.
+    for label, loaded in sorted(all_registries.items()):
+        # The paragraph is wrapped, so compare against it unwrapped.
+        summary = " ".join(emit.summarise_other_schedules(
+            YearTotals(), label, long_term_months=24, year_rules=loaded
+        ).split())
+        for key in ("foreign_tax_credit_statement_deadline", "form_67_deadline"):
+            if key in loaded.entries:
+                deadline = loaded.value(key)
+                break
+        check(f"{label}: the summary names the form from the registry",
+              deadline["form"] in summary, summary[-320:])
+        check(f"{label}: the summary names the rule from the registry",
+              deadline["rule"] in summary, summary[-320:])
+        check(f"{label}: the summary states the registry's deadline",
+              deadline["date"] in summary, summary[-320:])
+    older_summary = " ".join(emit.summarise_other_schedules(
+        YearTotals(), "2026-27", 24, year_rules=all_registries.get("2026-27")
+    ).split())
+    newer_summary = " ".join(emit.summarise_other_schedules(
+        YearTotals(), "2027-28", 24, year_rules=all_registries.get("2027-28")
+    ).split())
+    check("a 1961-Act year's summary still says Form 67 and rule 128",
+          "Form No. 67" in older_summary and "128(9)" in older_summary)
+    check("a 2025-Act year's summary asserts no repealed provision",
+          "Form No. 67" not in newer_summary and "128(9)" not in newer_summary
+          and "139(" not in newer_summary, newer_summary[-320:])
+
     # ------------------------------------------------- the checklist cannot drift
     print("\n[annual review checklist]")
     check("docs/ANNUAL-REVIEW.md exists", os.path.exists(REVIEW_DOC), REVIEW_DOC)
     if os.path.exists(REVIEW_DOC):
         with open(REVIEW_DOC, encoding="utf-8") as fh:
             doc = fh.read()
-        missing = [e.key for e in annual if e.key not in doc]
-        check("every annual entry appears in the checklist", not missing, str(missing))
-        check("the checklist names the registry it describes",
-              f"AY{registry.assessment_year}.json" in doc)
-        undocumented = [
-            key for key, entry in registry.entries.items()
-            if entry.review == rules.REVIEW_ANNUAL
-            and not any(url.get("url", "") in doc for url in entry.sources)
-        ]
-        check("the checklist carries a source link for every annual entry",
-              not undocumented, str(undocumented))
+        for label, loaded in sorted(all_registries.items()):
+            loaded_annual = loaded.annual_entries()
+            missing = [e.key for e in loaded_annual if e.key not in doc]
+            check(f"{label}: every annual entry appears in the checklist",
+                  not missing, str(missing))
+            check(f"{label}: the checklist names the registry it describes",
+                  f"AY{label}.json" in doc)
+            undocumented = [
+                e.key for e in loaded_annual
+                if not any(source.get("url", "") in doc for source in e.sources)
+            ]
+            check(f"{label}: the checklist carries a source link for every annual entry",
+                  not undocumented, str(undocumented))
+        # The discontinuity itself has to be explained, not just listed: a reader who
+        # meets AY 2027-28 as "this year's refresh" will re-verify the wrong figures
+        # against the wrong Act.
+        check("the checklist explains the change of Act",
+              ACT_2025 in doc and "536" in doc)
+        check("the checklist says why the old registry keeps old-Act citations",
+              "536(2)(c)" in doc)
 
     # ------------------------------------------------------- optional: reachability
     if os.environ.get("ITRPREP_CHECK_SOURCE_URLS") == "1":
@@ -301,7 +497,10 @@ def main() -> int:
         import urllib.error
         import urllib.request
         seen: dict[str, int] = {}
-        for entry in registry.entries.values():
+        every_entry = [
+            entry for loaded in all_registries.values() for entry in loaded.entries.values()
+        ]
+        for entry in every_entry:
             for source in entry.sources:
                 url = (source.get("url") or "").strip()
                 if not url or url in seen:

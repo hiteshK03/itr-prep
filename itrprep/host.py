@@ -1,7 +1,7 @@
 """Which machines can drive the ITD's Excel utility, and how to say so plainly.
 
 Everything else in this package is plain Python and runs anywhere: parsing broker exports,
-lot matching, Rule 115 conversion, split restatement, the threshold report, schema
+lot matching, specified-date FX conversion, split restatement, the threshold report, schema
 validation and emitting Schedule FA JSON. Exactly one step is not portable -- `itr-prep
 import`, which drives the department's `.xlsm` utility -- and this module is the single
 place that knows it.

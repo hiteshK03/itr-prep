@@ -5,15 +5,22 @@ Why this exists
 A disclosure schedule is an assertion about the law as much as about the taxpayer's
 holdings. A threshold hardcoded in a module is a claim nobody can check and nobody
 remembers to re-check, and the ones that matter here have already moved: the Black Money
-Act relief threshold replaced a Rs 5,00,000 bank-balance carve-out in 2024, and Form 67's
-deadline was rewritten in 2022. So the figures live in `rules/AY<year>.json`, each with an
-official source, and this module is the only way code reaches them.
+Act relief threshold replaced a Rs 5,00,000 bank-balance carve-out in 2024, and the
+foreign tax credit statement changed its form, its rule and its deadline basis when the
+Income-tax Act, 2025 came into force. So the figures live in `rules/AY<year>.json`, each
+with an official source, and this module is the only way code reaches them.
+
+There is one registry per assessment year and they are not interchangeable: AY 2026-27 is
+decided under the Income-tax Act, 1961 and AY 2027-28 onwards under the Income-tax Act,
+2025, which renumbered almost every provision. Each entry in the later registry records the
+earlier provision it descends from. See `docs/ANNUAL-REVIEW.md`.
 
 Two things are enforced rather than documented, because a note in a file gets skipped:
 
   1. **Coverage.** Building a filing for an assessment year later than any registry we
      have is a hard error. Computing AY 2027-28 against AY 2026-27 figures is exactly the
-     silent failure this exists to prevent.
+     silent failure this exists to prevent -- and those two are under different Acts, so
+     it would not even be a matter of a stale rate.
 
   2. **Staleness.** Every entry declares a review class. `annual` means a Finance Act or a
      notification can move it, so an `annual` entry stated for an earlier assessment year
@@ -280,9 +287,9 @@ def require_for_calendar_year(
 
     Refuses outright to run ahead of the registry: filing an assessment year later than
     any registry on disk would mean computing against figures nobody has checked for it.
-    Running *behind* the newest registry is allowed -- prior-year builds under section
-    139(8A) are a documented workflow -- but says so, since the figures it is about to
-    use are stated for a later year.
+    Running *behind* the newest registry is allowed -- prior-year updated returns are a
+    documented workflow -- but says so, since the figures it is about to use are stated
+    for a later year, and from AY 2027-28 possibly under a different Act.
     """
     want = assessment_year_for(calendar_year)
     found = available(rules_dir)
@@ -312,10 +319,12 @@ def require_for_calendar_year(
         "-" * width,
         f"NOTE: filing AY {want}, but the registry on disk covers AY {newest}.",
         f"There is no rules/AY{want}.json. The statutory figures used below are stated",
-        f"for AY {newest}. For a prior-year return under section 139(8A) that is usually",
-        "what you want -- the penalty and threshold provisions applied to it are the ones",
-        "in force now -- but it is a choice, not a default. Check the figures the report",
-        "prints against the law as it stood if that matters to your position.",
+        f"for AY {newest}. For a prior-year updated return that is usually what you",
+        "want -- the penalty and threshold provisions applied to it are the ones in force",
+        "now -- but it is a choice, not a default. Check the figures the report prints",
+        "against the law as it stood if that matters to your position: AY 2026-27 and",
+        "earlier are decided under the Income-tax Act, 1961 and later years under the",
+        "Income-tax Act, 2025, which renumbered almost every provision.",
         "-" * width,
     ])
     return rules, warning

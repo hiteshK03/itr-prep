@@ -7,6 +7,15 @@ anything else; where detail matters it is inline. Tick each box as you go.
 
 Rough timings assume the broker downloads work first time. Budget half a day.
 
+> **Every statutory citation in this file is to the Income-tax Act, 1961 and the Income-tax
+> Rules, 1962, deliberately.** AY 2026-27 is decided under that Act: the Income-tax Act,
+> 2025 came into force on 1 April 2026 and repealed it, but s.536(2)(c) of the new Act keeps
+> the old one applying to any tax year beginning before that date. So section 139, rule 128
+> and Form 67 are the right references here and must not be renumbered. A runbook for
+> AY 2027-28 will need section 263, rule 76 and Form 44 instead — see
+> [`ANNUAL-REVIEW.md`](ANNUAL-REVIEW.md) for the mapping. The Black Money Act, 2015 is
+> separate legislation and its section 43 is unaffected either way.
+
 ---
 
 ## Before anything else: a note on AIS

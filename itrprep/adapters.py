@@ -25,8 +25,9 @@ the ones nothing was read from. Reading only the first sheet is what dropped a w
 vest from a real Schedule FA, and it did so without a single warning.
 
 Per-share value is **three concepts, not one**. What an acquisition cost for Indian tax
-purposes is the fair market value the perquisite was charged on under section 17(2)(vi),
-which section 49(2AA) then makes the cost of acquisition -- not the discounted price the
+purposes is the fair market value the perquisite was charged on under s.17(1)(d) of the
+Income-tax Act, 2025, which s.73(1) then makes the cost of acquisition -- s.17(2)(vi) and
+s.49(2AA) of the 1961 Act -- not the discounted price the
 employee paid, which Form 16 has already taxed as salary. What a disposal realised is the
 execution price. And the paid price is neither: it is the evidence of the ESPP discount,
 so it is carried alongside rather than thrown away.
@@ -100,7 +101,8 @@ class Profile:
         self.acq_kind_default = acq_kind_default
         self.lot_aliases = lot_aliases
         # Gross, withheld and net are three different share counts and must stay
-        # separate. Section 17(2)(vi) charges the perquisite on GROSS shares and
+        # separate. Section 17(1)(d) of the Act of 2025 charges the perquisite on GROSS
+        # shares and
         # Schedule FA reports the gross acquisition with the withheld portion as a
         # disposal, so folding them into one "quantity" understates both that schedule
         # and Schedule CG.
@@ -115,8 +117,9 @@ class Profile:
         # What a disposal realised. A sale is measured at what it executed at, never at a
         # fair market value, so a section carrying both columns must not use one list.
         self.sale_price_aliases = sale_price_aliases
-        # What the employee actually paid. NOT the cost of acquisition -- section 49(2AA)
-        # makes that the FMV the perquisite was charged on -- but it is the only evidence
+        # What the employee actually paid. NOT the cost of acquisition -- s.73(1) of the
+        # Income-tax Act, 2025 (s.49(2AA) of the 1961 Act) makes that the FMV the
+        # perquisite was charged on -- but it is the only evidence
         # of the ESPP discount in the export, so it is kept for the audit trail.
         self.paid_price_aliases = paid_price_aliases
         # Which tranche of an award a row belongs to. In a nested stock-plan export the
@@ -156,8 +159,8 @@ ETRADE = Profile(
                       "Number of Shares"),
     # Per-share value of an ACQUISITION, most defensible name first.
     #
-    # The event-date FMV leads, because section 17(2)(vi) charges the perquisite on the
-    # FMV on the date of acquisition and section 49(2AA) then makes that same figure the
+    # The event-date FMV leads, because s.17(1)(d) of the Act of 2025 charges the
+    # perquisite on the FMV on the date of acquisition and s.73(1) then makes it the
     # cost of acquisition. The broker's own per-share cost basis comes next -- it is that
     # FMV, stated as a number. A paid or purchase price comes near the end: it is what the
     # employee handed over after the ESPP discount, the discount has already been taxed as
@@ -263,7 +266,7 @@ FIDELITY = Profile(
     ticker_aliases=("Symbol", "Ticker", "Security Description", "Investment"),
     quantity_aliases=("Shares Purchased", "Gross Shares", "Shares Issued",
                       "Quantity", "Shares", "Qty", "Number of Shares"),
-    # FMV first, for the section 49(2AA) reason set out on the E*TRADE profile.
+    # FMV first, for the s.73(1) (Act of 2025) reason set out on the E*TRADE profile.
     # "Purchase Value per Share" is Fidelity's own name for the figure the perquisite was
     # charged on, so it ranks with the FMV names and above any paid price.
     price_aliases=("Purchase Date FMV", "Subscription Date FMV", "Fair Market Value",
@@ -1426,7 +1429,8 @@ def _read_section(section, result, profile, broker, account_id,
         # -- acquisition, with or without a same-event disposal --------------
         if gross is None and net is not None:
             # No gross column. Without a withheld count the export cannot state the gross
-            # figure at all, and section 17(2)(vi) charges the perquisite on gross, so the
+            # figure at all, and s.17(1)(d) of the Act of 2025 charges the perquisite on
+            # gross, so the
             # result is a floor rather than an answer -- warned about below.
             gross = net + (withheld or Decimal(0))
             if withheld is None:
@@ -1536,20 +1540,22 @@ def _read_section(section, result, profile, broker, account_id,
              f"value of their own (first at line {inherited_basis[0]}) and were priced "
              f"from the {section.column(C_PRICE)!r} figure on the same award's position "
              f"row. That column is the broker's own cost basis, which for a vest is the "
-             f"FMV section 17(2)(vi) charges the perquisite on -- confirm it against your "
-             f"Form 16 part B / 12BA before filing.")
+             f"FMV the perquisite is charged on -- s.17(1)(d) of the Income-tax Act, 2025, "
+             f"s.17(2)(vi) of the 1961 Act. Confirm it against your Form 16 part B / 12BA "
+             f"before filing.")
     if paid_as_basis:
         warn(f"{path} {section.label}: {len(paid_as_basis)} acquisition(s) were priced "
              f"from {section.column(C_PRICE)!r}, which is what was PAID, because the "
-             f"section carries no fair-market-value column. Under section 49(2AA) the cost "
-             f"of acquisition is the FMV the perquisite was charged on under section "
-             f"17(2)(vi); the discount has already been taxed as salary through Form 16, "
+             f"section carries no fair-market-value column. The cost of acquisition is "
+             f"the FMV the perquisite was charged on -- s.73(1) with s.17(1)(d) of the "
+             f"Income-tax Act, 2025, s.49(2AA) with s.17(2)(vi) of the 1961 Act; the "
+             f"discount has already been taxed as salary through Form 16, "
              f"so using the paid price taxes it a second time as capital gain. Re-export "
              f"with the purchase-date FMV column, or correct price_usd by hand.")
     if derived_gross:
         warn(f"{path} {section.label}: {len(derived_gross)} row(s) state only a net share "
              f"count with no withheld-share column (first at line {derived_gross[0]}), so "
-             f"gross was taken to equal net. Section 17(2)(vi) charges the perquisite on "
+             f"gross was taken to equal net. The perquisite is charged on "
              f"GROSS shares, so those rows are a floor. Re-export with the "
              f"'Tax Collection Shares'/'Shares Withheld' column to close it.")
     if total_as_price:

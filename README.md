@@ -100,9 +100,11 @@ instead of this README. It is a single linear checklist from downloads to a file
 >
 > - **Downloading it is logged** against the PAN, one calendar year at a time, and cannot be
 >   undone. So is AIS feedback, which is acknowledged and cannot be withdrawn.
-> - **That log may bear on eligibility to file an updated return.** Section 139(8A) bars an
->   updated return in certain circumstances, including where information received under an
->   agreement referred to in s.90 or s.90A has been communicated to the assessee.
+> - **That log may bear on eligibility to file an updated return.** An updated return is
+>   barred in certain circumstances, including where information received under an agreement
+>   for the exchange of information has been communicated to the assessee — s.139(8A) of the
+>   Income-tax Act, 1961 for AY 2026-27 and earlier, s.263(6) of the Income-tax Act, 2025 for
+>   later years.
 >
 > Whether either matters in a given case depends on facts this tool knows nothing about.
 > **Take professional advice before downloading, if there is any chance you may need to file
@@ -141,8 +143,8 @@ instead of this README. It is a single linear checklist from downloads to a file
 ## Where this runs
 
 **Everything except the last step is plain Python and runs on macOS, Linux and Windows
-alike.** Parsing broker exports, reconstructing lots, FIFO and same-day matching, Rule 115
-conversion, split restatement, the ₹20 lakh threshold report, schema validation and writing
+alike.** Parsing broker exports, reconstructing lots, FIFO and same-day matching,
+specified-date FX conversion, split restatement, the ₹20 lakh threshold report, schema validation and writing
 the Schedule FA JSON and its audit CSV — none of that touches a platform. CI runs the whole
 test suite on Linux and macOS to keep it that way.
 
@@ -495,8 +497,9 @@ proceeds anyway.
 
 **If your export has both a gross and a net quantity column** (e.g. `Shares Issued`
 alongside `Tax Collection Shares` and `Net Shares`), all three are read as three different
-numbers. The **gross** count is reported as the acquisition, because that is what
-section 17(2)(vi) charges as a perquisite and what Form 12BA item 17 states, and the
+numbers. The **gross** count is reported as the acquisition, because that is what the
+perquisite is charged on — s.17(1)(d) of the Income-tax Act, 2025, s.17(2)(vi) of the 1961
+Act — and what Form 12BA item 17 states, and the
 withheld shares become a **disposal on the same date** — a sell-to-cover is a real transfer
 of a foreign share, so it belongs in Schedule FA as acquired-then-disposed and in
 Schedule CG as a near-nil-gain sale. Reporting only the net count understates both.
@@ -538,7 +541,8 @@ against Form 12BA.
 
 Three per-share concepts are kept apart, because conflating them is a misstatement in a
 specific direction each time: the **FMV** an acquisition is charged on (the cost of
-acquisition under section 49(2AA)), the **price a sale executed at** (what a disposal is
+acquisition under s.73(1) of the Income-tax Act, 2025, s.49(2AA) of the 1961 Act), the
+**price a sale executed at** (what a disposal is
 valued at, never an FMV), and the **price paid** on a discounted purchase (evidence of the
 perquisite, never a basis — see the ESPP note in the data dictionary). `Est. Market Value`
 and `Est. Taxable Gain/Loss` are refused outright as either: the first is a snapshot at the
@@ -825,8 +829,8 @@ One row per acquisition, disposal or dividend. All amounts in **USD**.
 | `price_usd` | BUY/SELL | Per-share USD cost of acquisition. For a vest this is the **vest-date FMV**. **For ESPP, this is also the FMV at purchase, NOT the discounted price you paid** — see the ESPP note below, this is a common and consequential mistake |
 | `amount_usd` | DIVIDEND | Gross USD. Optional for BUY/SELL — derived from quantity x price if blank |
 | `tax_withheld_usd` | no | US tax withheld on a dividend. Feeds Form 67 / Schedule TR |
-| `expense_usd` | no | Brokerage/commission on a BUY or SELL. Deductible from capital gains under Section 48 -- added to cost of acquisition on a BUY, subtracted from sale consideration on a SELL. Omitting this when your broker actually charged commission silently overstates your taxable gain |
-| `paid_price_usd` | no | What you actually paid per share on a discounted ESPP purchase, where the export states it separately from FMV. **Never a cost of acquisition** — `price_usd` is, under section 49(2AA). This is audit trail: FMV minus this, times quantity, is the perquisite already taxed through Form 16, so it is what reconciles Schedule FA against Form 12BA item 17. No computation reads it |
+| `expense_usd` | no | Brokerage/commission on a BUY or SELL. Deductible from capital gains under s.72(1)(a) of the Income-tax Act, 2025 (s.48 of the 1961 Act) -- added to cost of acquisition on a BUY, subtracted from sale consideration on a SELL. Omitting this when your broker actually charged commission silently overstates your taxable gain |
+| `paid_price_usd` | no | What you actually paid per share on a discounted ESPP purchase, where the export states it separately from FMV. **Never a cost of acquisition** — `price_usd` is, under s.73(1) of the Income-tax Act, 2025 (s.49(2AA) of the 1961 Act). This is audit trail: FMV minus this, times quantity, is the perquisite already taxed through Form 16, so it is what reconciles Schedule FA against Form 12BA item 17. No computation reads it |
 | `acq_kind` | no | `RSU_VEST`, `ESPP`, `OPEN_MARKET`, `DRIP`, `OTHER`. Informational for Schedule FA, but `doctor` uses it to recognise an employer stock-plan account and check its row count is plausible |
 | `disposal_kind` | no | `SELL` rows only. `TAX_WITHHOLDING` marks shares the employer kept at vest to pay withholding tax (a "sell to cover"). Such a disposal is matched to the lot created by the vest on that **same date**, never FIFO — E\*TRADE stamps one grant number on every vest of an award, so `lot_id` alone would let an older vest absorb it and put both lots' quantity and cost basis wrong |
 | `lot_id` | no | Groups an acquisition. On a `SELL`, names which lot was sold. Blank means FIFO |
@@ -841,8 +845,9 @@ and cost regardless of age, and a `SELL` with no matching `BUY` is rejected.
 > This is a real, discovered-the-hard-way mistake, not a hypothetical one: an ESPP export's
 > `Purchase Price` column (e.g. E\*TRADE's, or Fidelity NetBenefits') is the **discounted**
 > price you paid, often 10–15% below market. Under Indian tax law the discount itself is
-> taxed separately as **perquisite/salary income** at the time of purchase (Section
-> 17(2)(vi)) — so the cost of acquisition carried forward for capital gains is the **FMV at
+> taxed separately as **perquisite/salary income** at the time of purchase (s.17(1)(d) of
+> the Income-tax Act, 2025, s.17(2)(vi) of the 1961 Act) — so the cost of acquisition
+> carried forward for capital gains is the **FMV at
 > purchase date**, not the discounted price. Using the discounted price as `price_usd`
 > silently understates the cost basis, which **overstates every subsequent capital gain (or
 > understates a loss)** — the exact wrong direction for a filer.
@@ -972,10 +977,12 @@ runs need no network. Two details:
   cards. The **first** card of the day is used, so a date always maps to one reproducible
   number.
 
-**Schedule CG and Schedule OS use a different, Rule-115-mandated convention.** Rule 115(2)
+**Schedule CG and Schedule OS use a different, specified-date convention.** Rule 115(2)
 of the Income-tax Rules, 1962 specifies the exchange-rate date for capital gains
 (sub-clause (f)) and dividend income (sub-clause (e)) as **the last day of the month
-immediately preceding** the month of transfer / dividend, not the transaction's own date --
+immediately preceding** the month of transfer / dividend, not the transaction's own date;
+rule 206 of the Income-tax Rules, 2026 restates the same convention as a table (Table
+Sl. Nos. 6 and 5) for tax year 2026-27 onwards --
 applied to *both* the cost-of-acquisition leg and the sale-proceeds leg. This is
 deliberately different from the per-date convention above, which is Schedule FA's own,
 separately documented rule. Confirmed against a real broker's own tax report: their
@@ -1130,7 +1137,9 @@ securities alone.
 ## Prior years: AY 2024-25 and AY 2025-26
 
 `--year 2023` and `--year 2024` feed **updated returns under s.139(8A)** for AY 2024-25 and
-AY 2025-26. Calendar year → assessment year:
+AY 2025-26. All three years in the table below are decided under the Income-tax Act, 1961,
+so the citations in this section are to that Act deliberately. Calendar year → assessment
+year:
 
 | `--year` | Financial year | Assessment year | Utility |
 |---|---|---|---|
@@ -1177,7 +1186,7 @@ Two caveats remain worth stating:
 
 ---
 
-## Schedule CG, OS, FSI, TR and Form 67
+## Schedule CG, OS, FSI, TR and the foreign tax credit statement
 
 Schedule FA does not cover capital gains or dividend income. `..._other_schedules.txt`
 gives you those figures, on the **financial year** (1 Apr – 31 Mar), not the calendar year:
@@ -1186,13 +1195,18 @@ gives you those figures, on the **financial year** (1 Apr – 31 Mar), not the c
   into short term (held ≤ 24 months) and long term (> 24 months). Hundreds of trades
   collapse into these two blocks. Foreign shares are unlisted for Indian purposes, hence
   the 24-month threshold.
-- **Schedule OS / FSI / TR and Form 67** — gross foreign dividend and US tax withheld, in
-  both USD and INR.
+- **Schedule OS / FSI / TR and the foreign tax credit statement** — gross foreign dividend
+  and US tax withheld, in both USD and INR. The paragraph that names the form and its
+  deadline is rendered from the registry for the year being built, so it says Form 67 for
+  AY 2026-27 and Form 44 for AY 2027-28 rather than asserting either.
 
 These are **reported, not emitted into the JSON**, deliberately. Schedule CG's structure
 depends on choices this tool has no business making — which section, indexation, set-off
 against other losses — and a wrong auto-filled capital gains schedule is far more dangerous
 than one you enter yourself. Enter them by hand or hand the file to your CA.
+
+**For AY 2026-27 and earlier — a 1961-Act year, so 1961-Act citations throughout the rest
+of this section.**
 
 **Form 67 is due by the end of the assessment year, not by the return's due date.** Rule
 128(9) of the Income-tax Rules, 1962 was substituted by **CBDT Notification No. 100/2022
@@ -1219,21 +1233,30 @@ is a fallback for a credit already claimed, not a filing plan.
 **AY 2026-27 is the last year on Form 67.** From tax year 2026-27 — income earned from
 1 April 2026, governed by the Income-tax Act, 2025 — the claim moves to **Form No. 44 under
 rule 76 of the Income-tax Rules, 2026** (CBDT Notification No. 22/2026, G.S.R. 198(E),
-20 March 2026). Both deadlines carry over unchanged: rule 76(12) gives twelve months from
-the end of the tax year, and rule 76(13) repeats the updated-return proviso. The
-substantive change is that rule 76(16) requires an accountant to verify Form 44 where the
-assessee is a company or foreign tax paid for the year is ₹1,00,000 or more.
+20 March 2026). Both limbs of the deadline survive: rule 76(12) gives twelve months from
+the end of the tax year where the return is within the section 263(1) or 263(4) window, and
+rule 76(13) repeats the updated-return proviso for a return under section 263(6)(a). What
+changed in substance is that rule 76(16) requires an accountant to verify Form 44 where the
+assessee is a company or foreign tax paid for the tax year is ₹1,00,000 or more, the form
+asks for the foreign tax identification number, and a new Form No. 45 intimates a later
+refund of foreign tax. The ITAT authority above is on rule 128(9) and does not
+automatically carry to rule 76; treat the deadline as real.
 
 ---
 
 ## Where every statutory figure comes from
 
 Every rate, limit, threshold, deadline and conversion convention this tool relies on lives
-in [`rules/AY2026-27.json`](rules/AY2026-27.json), each with an official citation. Code
-reads them from there. Nothing is computed from memory and nothing is hardcoded at a call
-site — because the figures that matter here have already moved: the Black Money Act relief
-threshold replaced an earlier ₹5 lakh bank-balance carve-out in 2024, and Form 67's
-deadline was rewritten in 2022.
+in `rules/AY<year>.json`, each with an official citation. Code reads them from there.
+Nothing is computed from memory and nothing is hardcoded at a call site — because the
+figures that matter here have already moved: the Black Money Act relief threshold replaced
+an earlier ₹5 lakh bank-balance carve-out in 2024, the foreign tax credit deadline was
+rewritten in 2022, and then the whole Act was replaced.
+
+| Registry | Tax year | Statute | Entries |
+|---|---|---|---|
+| [`rules/AY2026-27.json`](rules/AY2026-27.json) | FY 2025-26 | Income-tax Act, **1961** | 12, of which 6 `annual` |
+| [`rules/AY2027-28.json`](rules/AY2027-28.json) | FY 2026-27 | Income-tax Act, **2025** | 28, of which 13 `annual` |
 
 ```bash
 itr-prep rules                # every entry, its value, its authority and its source
@@ -1243,16 +1266,52 @@ itr-prep rules --annual-only  # just the ones that need re-verifying each year
 Each entry declares a **review class**. `stable` means fixed by statute — a settled
 convention or a historical date. `annual` means a Finance Act or a notification can move
 it, and it must be re-verified before the registry is used for a later assessment year.
-Six of the twelve entries are `annual`.
+
+### AY 2027-28 is a change of statute, not a refresh
+
+The **Income-tax Act, 2025** came into force on 1 April 2026 and repealed the Income-tax
+Act, 1961 by its section 536(1). Almost every provision was renumbered — but **section
+536(2)(c) keeps the old Act applying to any tax year beginning before that date**, so
+AY 2026-27, the year this tool was actually used to file, is permanently a 1961-Act year.
+
+Both things have to stay true in this repository at once, which is why the section numbers
+here are not consistent and should not be made so. Content about the AY 2026-27 filing keeps
+its 1961-Act citations — [`docs/RUNBOOK_AY2026-27.md`](docs/RUNBOOK_AY2026-27.md) and the
+dated `CHANGELOG.md` entries are 1961-Act throughout — and forward-looking content cites the
+Act of 2025, usually with the old number alongside. Every entry in `rules/AY2027-28.json`
+carries an `act_transition` block naming the provision it descends from and classifying the
+change as a renumbering, a substantive change, separate legislation or a new entry;
+[`docs/ANNUAL-REVIEW.md`](docs/ANNUAL-REVIEW.md) has the readable mapping table.
+
+Three things worth knowing without reading that table:
+
+- **The Black Money Act, 2015 is separate legislation and is not renumbered.** Section 43,
+  the ₹10,00,000 penalty and the ₹20,00,000 relief threshold are untouched. There is a live
+  cross-reference problem, though: section 43's cure lists sub-sections of section 139 of the
+  *1961* Act, and a tax year 2026-27 return is furnished under section 263 of the Act of
+  2025. Whether that reads onto the list is unresolved — see
+  [`docs/KNOWN-ISSUES.md`](docs/KNOWN-ISSUES.md).
+- **Two entries changed in substance, not just number.** The foreign tax credit statement
+  became Form No. 44 under rule 76 of the Income-tax Rules, 2026, with an accountant's
+  verification above ₹1,00,000 of foreign tax; and the revised-return deadline became twelve
+  months from the end of the tax year under section 263(5).
+- **The registry gained Indian mutual fund entries**, cited from the Gazette text:
+  grandfathering (s.90(7)–(8)), Specified Mutual Funds (s.76), both capital gains rates
+  (ss.196–198), holding periods (s.2(101)) and FIFO (s.67(7)(c)). No code reads them yet.
+  Two carry `implementation_trap` blocks that the test suite refuses to let anyone delete —
+  AMFI's 31 January 2018 file has both a *Net Asset Value* and a *Repurchase Price* column
+  and they differ on 4,756 of its 9,502 rows, and section 76 makes a Specified Mutual Fund
+  unit acquired on or after 1 April 2023 short-term *irrespective of the holding period*.
 
 That is enforced, not merely documented, because a note in a file gets skipped:
 
 - **`itr-prep build` refuses to run** for an assessment year the registry does not cover. It
   does not quietly fall back to the newest one. Computing AY 2027-28 against AY 2026-27
   figures is exactly the silent failure this prevents.
-- Building an **earlier** year runs — prior-year returns under s.139(8A) are a documented
-  workflow — but prints a banner saying which assessment year the figures it used are
-  stated for.
+- Building an **earlier** year runs — prior-year updated returns (s.139(8A) of the 1961 Act,
+  s.263(6)(a) of the Act of 2025) are a documented workflow — but prints a banner saying
+  which assessment year the figures it used are stated for, and which Act that year is
+  decided under.
 - **`tests/test_rules_registry.py` fails** if any entry lacks an official source URL, if
   any entry cites a secondary aggregator as its authority, if an `annual` entry has been
   left behind by the registry it lives in, or if an `annual` entry is missing from
@@ -1272,19 +1331,23 @@ the department's own site. ClearTax, TaxGuru, Taxmann and practitioner blogs are
 rate, a limit or a date; the test enforces the domain rule. `revised_return_deadline` was
 flagged `contested` while our own research disagreed about it, rather than picking a date
 and looking confident; it has since been settled against the enacted Finance Act 2026 text
-and the flag removed.
+and the flag removed. **One entry is `contested` now** —
+`specified_mf_debt_threshold_pct`, where secondary commentary describes a 90-day carve-out
+that is not in the Gazette text and the department's consolidated as-amended PDF returns 403
+to every automated client, so the question could not be closed either way.
 
 Scope is deliberately narrow: the registry holds what Schedule FA and its dependent
-schedules need, and nothing else. Slab rates, Chapter VI-A deductions and the section 112A
-grandfathering date are not here — foreign shares are never section 112A assets, so this
-tool has no occasion to assert them.
+schedules need, plus Indian mutual fund capital gains. Slab rates, surcharge tiers and
+Chapter VI-A deductions are not here. The 31 January 2018 grandfathering date used to be out
+of scope too, correctly — foreign shares are never section 112A assets — but its Act-of-2025
+successor at section 90(7)–(8) governs mutual fund units, so it is now in.
 
 ---
 
 ## Verification
 
-Eight suites, 752 checks, all runnable offline once the caches are warm, and all of them on
-macOS and Linux alike — CI runs the whole set on both:
+Eight suites, 1,164 checks, all runnable offline once the caches are warm, and all of them
+on macOS and Linux alike — CI runs the whole set on both:
 
 ```bash
 .venv/bin/python tests/test_validation_teeth.py        # 24 cases
@@ -1293,15 +1356,27 @@ macOS and Linux alike — CI runs the whole set on both:
 .venv/bin/python tests/test_doctor_readback.py         # 96 checks
 .venv/bin/python tests/test_multisection_adapter.py    # 111 checks
 .venv/bin/python tests/test_multisheet_workbook.py     # 117 checks
-.venv/bin/python tests/test_rules_registry.py          # 167 checks
+.venv/bin/python tests/test_rules_registry.py          # 579 checks
 .venv/bin/python tests/test_unlock_credentials.py      # 90 checks
 ```
+
+The registry suite was 167 checks and is now 579. Two things account for most of the jump:
+there is a second registry, and the suite now runs the citation, review-class and staleness
+blocks against **every** registry on disk rather than only the newest. Before, adding
+`rules/AY2027-28.json` would silently have retired `rules/AY2026-27.json` from the suite.
+The rest is new. The **act-transition** block asserts that each registry cites the Act its
+year is decided under, that every entry in the later registry records where it came from,
+that nothing was dropped across the change and that the Black Money Act entries are marked
+as separate legislation rather than renumbered. The **encoded-trap** block fails if either
+mutual fund trap is deleted or hollowed out. And the other-schedules summary is now asserted
+to name the form, rule and deadline the registry gives — Form 67 and rule 128(9) for
+AY 2026-27, and no repealed provision at all for AY 2027-28.
 
 **That is the count with everything present**, and two of the eight suites need something a
 bare clone does not have. Without the ITD schema in `schemas/`, `test_validation_teeth.py`
 skips in full and `test_pipeline.py` drops three schema-dependent checks; without the optional
 unlock extras, `test_unlock_credentials.py` skips its 38 encrypted round-trip checks. All three
-say so when they skip, none of them fails, and a bare clone therefore sees 8 suites and 687
+say so when they skip, none of them fails, and a bare clone therefore sees 8 suites and 1,099
 checks pass. CI installs the unlock extras deliberately — a proof that skips is not one — and
 does not fetch the schema, since the department's artefact is not ours to download in a
 workflow.
@@ -1649,8 +1724,11 @@ and nowhere else, it is not built. Check the code before relying on any of it.
 - **Indian mutual funds.** Capital gains on Indian mutual fund units, from a registrar or
   broker capital-gains statement. This is a genuinely different problem from the one solved
   here, not an extension of it: units are not lots of a foreign share, the holding-period and
-  section 112A treatment differ, grandfathering to 31 January 2018 applies, and none of it
-  touches Schedule FA. It would need its own rules-registry entries and its own fixtures.
+  equity-oriented treatment differ, grandfathering to 31 January 2018 applies, and none of it
+  touches Schedule FA. **The rules-registry entries now exist** —
+  [`rules/AY2027-28.json`](rules/AY2027-28.json) carries grandfathering, Specified Mutual
+  Funds, both rates, holding periods and FIFO, cited to the Income-tax Act, 2025 — but no
+  code reads them and there are no fixtures. The registry work was the cheap half.
 - **ITR-1, ITR-3 and ITR-4.** The department's utilities for these share much of the ITR-2
   VBA, so the import mechanism may well carry over — but "may well" is the whole distance
   between this list and the [Verification](#verification) section. Nothing about the sheet

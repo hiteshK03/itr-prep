@@ -374,6 +374,7 @@ def cmd_build(args) -> int:
             long_term_months=year_rules.int_field(
                 "foreign_share_long_term_holding", "months"
             ),
+            year_rules=year_rules,
         ))
         fh.write("\n")
 

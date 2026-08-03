@@ -1,0 +1,707 @@
+{
+  "_schema": "itrprep-rules/1",
+  "_purpose": "Every statutory figure, date and convention this tool relies on, for ONE assessment year, each one cited to an official source. Code reads values from here and never from memory. A value that is not in this file, with a source, is a value the tool has no business asserting.",
+  "_source_policy": "Primary sources only, in this order: the Income-tax Act or the Finance Act text, a CBDT notification or circular, then incometaxindia.gov.in or incometax.gov.in. Secondary aggregators -- ClearTax, Taxmann, TaxGuru, practitioner blogs -- may be used to FIND a provision and may be quoted in prose, but must never be the cited authority for a rate, a limit or a date. tests/test_rules_registry.py enforces the domain rule.",
+  "_review_classes": "stable = fixed by statute and not expected to move; a historical date or a settled convention. annual = set or revised by a Finance Act, or otherwise dependent on the assessment year. Every 'annual' entry must be re-verified before this registry is used for a later assessment year -- see docs/ANNUAL-REVIEW.md.",
+
+  "_act_transition": "THIS IS THE FIRST REGISTRY UNDER A DIFFERENT STATUTE. The Income-tax Act, 2025 (No. 30 of 2025) received assent on 21 August 2025 and, by its own section 1(3), came into force on 1 April 2026. Section 536(1) repeals the Income-tax Act, 1961. FY 2026-27 -- what the 1961 Act called previous year 2026-27 and the 2025 Act calls tax year 2026-27 -- is therefore the FIRST year assessed under the new Act, and this registry is the first one whose citations are not 1961-Act citations. Section 536(2)(c) is the reason rules/AY2026-27.json must NOT be renumbered to match: the repealed Act continues to apply to proceedings 'in respect of any tax year beginning before the 1st April, 2026', so AY 2026-27 was, is and remains a 1961-Act year and its registry, runbook and audit trail must keep saying so. Every entry below carries an 'act_transition' object recording the old provision, the new provision, and whether the change was a renumbering or a change of substance. docs/ANNUAL-REVIEW.md carries the same mapping in table form.",
+  "_act_transition_change_values": "renumbered_only = the same rule, in a differently numbered provision. renumbered_and_substantive = the provision moved AND what it says changed; read the entry. unchanged_separate_legislation = not affected by the 2025 Act at all, because the provision is in a different enactment. new_entry = not present in rules/AY2026-27.json.",
+
+  "assessment_year": "2027-28",
+  "financial_year": "2026-27",
+  "schedule_fa_calendar_year": 2026,
+  "verified_on": "2026-08-03",
+
+  "entries": {
+    "schedule_fa_reporting_basis": {
+      "value": "calendar_year",
+      "review": "stable",
+      "applies_to": "all",
+      "verified_on": "2026-08-03",
+      "statute": "Schedule FA of ITR-2 reports foreign assets held at any time during the calendar year ending 31 December that falls within the previous year (tax year, in the 2025 Act's vocabulary). Every other schedule in the return runs on the financial year. Note the asymmetry the 2025 Act makes explicit: the OBLIGATION TO FILE is a tax-year test -- section 263(1)(a)(ix) catches a resident and ordinarily resident who holds a foreign asset 'at any time during the tax year' -- while the calendar-year basis is a property of the FORM, not of the Act, and always has been.",
+      "check": "Nothing to check annually in principle: the basis has been the calendar year since Schedule FA was aligned to CRS/FATCA reporting periods, and nothing in the Income-tax Act, 2025 or the Income-tax Rules, 2026 disturbs that. But the ITR-2 form for tax year 2026-27 is NOT YET NOTIFIED. Rule 164(4) of the Income-tax Rules, 2026 prescribes Form No. ITR-2 for an individual or HUF without business income for 'the tax year commencing on the 1st April, 2026', which settles the form; it does not settle the schedule's reporting period. Confirm the calendar-year basis against the notified form before filing.",
+      "act_transition": {
+        "ay2026_27_key": "schedule_fa_reporting_basis",
+        "old": "Fourth proviso to section 139(1) of the Income-tax Act, 1961, read with the ITR-2 form and the department's Schedule FA guide",
+        "new": "Section 263(1)(a)(ix) and 263(1)(b) of the Income-tax Act, 2025, read with rule 164(4) of the Income-tax Rules, 2026 and the ITR-2 form for tax year 2026-27",
+        "change": "renumbered_only"
+      },
+      "sources": [
+        {
+          "authority": "Income-tax Act, 2025 (No. 30 of 2025), section 263(1)(a)(ix) and (1)(b) -- the filing obligation for a resident holding an asset located outside India, Gazette of India Extraordinary, Part II Section 1, 21 August 2025",
+          "url": "https://egazette.gov.in/WriteReadData/2025/265620.pdf"
+        },
+        {
+          "authority": "CBDT Notification No. 22/2026, G.S.R. 198(E), 20 March 2026 -- Income-tax Rules, 2026, rule 164 (forms and eligibility for the return of income for the tax year commencing 1 April 2026)",
+          "url": "https://www.incometax.gov.in/iec/foportal/sites/default/files/2026-03/En-Notified-IT-Rules-2026-20-03-2026.pdf"
+        },
+        {
+          "authority": "Income Tax Department, ITR-2 instructions and utilities for the assessment year",
+          "url": "https://www.incometax.gov.in/iec/foportal/downloads/income-tax-returns"
+        }
+      ]
+    },
+
+    "schedule_fa_reporting_period": {
+      "value": {"start": "2026-01-01", "end": "2026-12-31"},
+      "review": "annual",
+      "applies_to": "2027-28",
+      "verified_on": "2026-08-03",
+      "statute": "The calendar year ending 31 December falling within tax year 2026-27. Derived by advancing the AY 2026-27 period by one year; it is NOT yet confirmed against a notified form, because the ITR-2 for tax year 2026-27 has not been published.",
+      "check": "Confirm the calendar year the assessment year's ITR-2 instructions name for Schedule FA. It advances by one year with the assessment year, but confirm rather than assume -- this is the single most consequential date in the tool. For THIS year there is a second reason not to assume: the form has been redrawn onto a new Act and a new set of Rules, and no ITR-2 for tax year 2026-27 was published as at 3 August 2026. Do not file against this entry until you have read the notified form.",
+      "act_transition": {
+        "ay2026_27_key": "schedule_fa_reporting_period",
+        "old": "Calendar year 2025, within previous year 2025-26, assessed AY 2026-27 under the Income-tax Act, 1961",
+        "new": "Calendar year 2026, within tax year 2026-27, the first year assessed under the Income-tax Act, 2025",
+        "change": "renumbered_only"
+      },
+      "sources": [
+        {
+          "authority": "Income-tax Act, 2025 (No. 30 of 2025), section 2(109) 'tax year' and section 263(1)(a)(ix) -- the tax year is the twelve months of the financial year, and the foreign-asset filing obligation runs on it",
+          "url": "https://egazette.gov.in/WriteReadData/2025/265620.pdf"
+        },
+        {
+          "authority": "Income Tax Department, ITR-2 instructions and utilities for the assessment year",
+          "url": "https://www.incometax.gov.in/iec/foportal/downloads/income-tax-returns"
+        }
+      ]
+    },
+
+    "schedule_fa_fx_convention": {
+      "value": "sbi_tt_buying_rate_on_the_relevant_date",
+      "review": "stable",
+      "applies_to": "all",
+      "verified_on": "2026-08-03",
+      "statute": "The department's own guide fixes each Schedule FA amount to the SBI telegraphic transfer buying rate as on the date that amount relates to -- the investment date, the peak date, 31 December, each dividend date, each sale date. This is a form convention rather than a statutory one, and it survives the change of Act: rule 207 of the Income-tax Rules, 2026 carries the same definition of 'telegraphic transfer buying rate' that rule 115(1) of the 1962 Rules did, being the rate adopted by the State Bank of India for buying the currency where it is made available through telegraphic transfer.",
+      "check": "Nothing to check annually. Re-read the guide only if the department reissues it -- which it must, for the first year under the Income-tax Act, 2025, so expect a reissue rather than assume continuity.",
+      "act_transition": {
+        "ay2026_27_key": "schedule_fa_fx_convention",
+        "old": "Income Tax Department Schedule FA guide, with 'telegraphic transfer buying rate' as defined in rule 115(1) of the Income-tax Rules, 1962",
+        "new": "Income Tax Department Schedule FA guide, with 'telegraphic transfer buying rate' as defined in rule 207 of the Income-tax Rules, 2026",
+        "change": "renumbered_only"
+      },
+      "sources": [
+        {
+          "authority": "CBDT Notification No. 22/2026, G.S.R. 198(E), 20 March 2026 -- Income-tax Rules, 2026, rule 207 (definition of telegraphic transfer buying rate)",
+          "url": "https://www.incometax.gov.in/iec/foportal/sites/default/files/2026-03/En-Notified-IT-Rules-2026-20-03-2026.pdf"
+        },
+        {
+          "authority": "Income Tax Department, Step by Step Guide to Fill Schedules FSI, TR and FA (issued for AY 2026-27; the successor for tax year 2026-27 was not published as at 3 August 2026)",
+          "url": "https://www.incometax.gov.in/iec/foportal/sites/default/files/2026-03/Step%20by%20Step%20Guide%20FA%20FSI.pdf"
+        }
+      ]
+    },
+
+    "income_fx_convention_specified_date": {
+      "value": "last_day_of_the_month_immediately_preceding",
+      "review": "stable",
+      "applies_to": "all",
+      "verified_on": "2026-08-03",
+      "statute": "Rule 206 of the Income-tax Rules, 2026: the value in rupees of income in foreign currency is the telegraphic transfer buying rate on the 'specified date', and the Table at rule 206(2)(b)(i) fixes that date as the last day of the month immediately preceding -- Sl. No. 6 for income chargeable under the head 'Capital gains' (the month of transfer) and Sl. No. 5 for dividends (the month in which the dividend is declared, distributed or paid). This is NOT the convention Schedule FA uses.",
+      "check": "Nothing to check annually. The substance did not move across the change of Act, but the citation form did completely: rule 115(2) of the 1962 Rules put capital gains at sub-clause (f) and dividends at sub-clause (e), whereas rule 206 of the 2026 Rules puts them at Table Sl. Nos. 6 and 5. A reader converting the old citation by find-and-replace gets a sub-clause that does not exist.",
+      "act_transition": {
+        "ay2026_27_key": "income_fx_convention_rule_115",
+        "old": "Rule 115(2) of the Income-tax Rules, 1962, sub-clause (f) for capital gains and sub-clause (e) for dividends",
+        "new": "Rule 206(2)(b)(i) of the Income-tax Rules, 2026, Table Sl. No. 6 for capital gains and Sl. No. 5 for dividends",
+        "change": "renumbered_only"
+      },
+      "sources": [
+        {
+          "authority": "CBDT Notification No. 22/2026, G.S.R. 198(E), 20 March 2026 -- Income-tax Rules, 2026, rule 206 (rate of exchange for conversion into rupees of income expressed in foreign currency)",
+          "url": "https://www.incometax.gov.in/iec/foportal/sites/default/files/2026-03/En-Notified-IT-Rules-2026-20-03-2026.pdf"
+        }
+      ]
+    },
+
+    "equity_perquisite_cost_of_acquisition": {
+      "value": "fair_market_value_charged_to_perquisite",
+      "review": "stable",
+      "applies_to": "all",
+      "verified_on": "2026-08-03",
+      "statute": "Section 17(1)(d) of the Income-tax Act, 2025 charges as a perquisite 'the value of any specified security or sweat equity shares allotted or transferred, directly or indirectly, by the current employer, or former employer, free of cost or at concessional rate to the assessee'. Section 73(1) then deems the cost of acquisition, and its Table at Sl. No. 4 answers this case exactly: for a 'capital asset, being specified security or sweat equity shares, referred to in section 17(1)(d)', the cost of acquisition is the 'Fair market value taken into account for the purposes of the said clause'. So the RSU or ESPP basis is the same fair market value the perquisite was charged on, not the discounted price actually paid.",
+      "check": "Nothing to check annually.",
+      "act_transition": {
+        "ay2026_27_key": "equity_perquisite_cost_of_acquisition",
+        "old": "Sections 17(2)(vi) and 49(2AA) of the Income-tax Act, 1961",
+        "new": "Sections 17(1)(d) and 73(1) (Table: Sl. No. 4) of the Income-tax Act, 2025",
+        "change": "renumbered_only"
+      },
+      "sources": [
+        {
+          "authority": "Income-tax Act, 2025 (No. 30 of 2025), sections 17(1)(d) and 73(1) (Table: Sl. No. 4), Gazette of India Extraordinary, Part II Section 1, 21 August 2025",
+          "url": "https://egazette.gov.in/WriteReadData/2025/265620.pdf"
+        }
+      ]
+    },
+
+    "transfer_expenditure_deductible": {
+      "value": true,
+      "review": "stable",
+      "applies_to": "all",
+      "verified_on": "2026-08-03",
+      "statute": "Section 72(1)(a) of the Income-tax Act, 2025: capital gains are computed by deducting from the full value of consideration 'expenditure incurred wholly and exclusively in connection with such transfer', which is what makes brokerage and commission part of the computation rather than a note. Section 72(1)(b) supplies the other leg, the cost of acquisition and of improvement.",
+      "check": "Nothing to check annually.",
+      "act_transition": {
+        "ay2026_27_key": "transfer_expenditure_deductible",
+        "old": "Section 48 of the Income-tax Act, 1961",
+        "new": "Section 72(1)(a) of the Income-tax Act, 2025",
+        "change": "renumbered_only"
+      },
+      "sources": [
+        {
+          "authority": "Income-tax Act, 2025 (No. 30 of 2025), section 72(1), Gazette of India Extraordinary, Part II Section 1, 21 August 2025",
+          "url": "https://egazette.gov.in/WriteReadData/2025/265620.pdf"
+        }
+      ]
+    },
+
+    "schedule_fa_disclosure_unconditional": {
+      "value": true,
+      "review": "stable",
+      "applies_to": "all",
+      "verified_on": "2026-08-03",
+      "statute": "Section 263(1)(a)(ix) of the Income-tax Act, 2025 requires a return from 'a person, who is a resident, other than not ordinarily resident, and who at any time during the tax year holds, as a beneficial owner or otherwise, any asset (including any financial interest in an entity) located outside India, or has signing authority in any account located outside India', and section 263(1)(b) then requires that person to file 'regardless of income or loss'. There is no de minimis, and the 2025 Act states it more plainly than the 1961 Act's fourth proviso did. The Rs 20,00,000 figure elsewhere in this registry relieves a PENALTY under separate legislation; it is not a reporting threshold, and reading it as one is the most expensive mistake available here.",
+      "check": "Nothing to check annually, but re-read the assessment year's Schedule FA instructions for any newly introduced threshold before relying on this.",
+      "act_transition": {
+        "ay2026_27_key": "schedule_fa_disclosure_unconditional",
+        "old": "Fourth proviso to section 139(1) of the Income-tax Act, 1961, read with the department's Schedule FA guide",
+        "new": "Sections 263(1)(a)(ix) and 263(1)(b) of the Income-tax Act, 2025",
+        "change": "renumbered_only"
+      },
+      "sources": [
+        {
+          "authority": "Income-tax Act, 2025 (No. 30 of 2025), section 263(1)(a)(ix) and (1)(b), Gazette of India Extraordinary, Part II Section 1, 21 August 2025",
+          "url": "https://egazette.gov.in/WriteReadData/2025/265620.pdf"
+        },
+        {
+          "authority": "Income Tax Department, Step by Step Guide to Fill Schedules FSI, TR and FA",
+          "url": "https://www.incometax.gov.in/iec/foportal/sites/default/files/2026-03/Step%20by%20Step%20Guide%20FA%20FSI.pdf"
+        }
+      ]
+    },
+
+    "foreign_share_long_term_holding": {
+      "value": {"months": 24, "days": 730},
+      "review": "annual",
+      "applies_to": "2027-28",
+      "verified_on": "2026-08-03",
+      "statute": "Section 2(101)(a) of the Income-tax Act, 2025: a short-term capital asset is one held for 'not more than twenty-four months' before transfer. Section 2(101)(b) substitutes twelve months for four categories, and none of them reaches a foreign company's share -- (b)(i) is a 'security listed in a recognised stock exchange IN INDIA', which a US-listed share is not; (b)(ii) is a Unit Trust of India unit; (b)(iii) is an equity-oriented fund unit; (b)(iv) is a zero-coupon bond. So the twenty-four month default applies. Used only for the Schedule CG short/long split, never for Schedule FA. The statute states months; the comparison is made in days, so both are recorded here and cannot drift apart in code.",
+      "check": "Read section 2(101) as it then stands. Holding periods were rewritten by the Finance (No. 2) Act 2024 with effect from 23 July 2024 and the 2025 Act carried the result forward unchanged; the Finance Act, 2026 amends section 2 of the 2025 Act (clauses (32) and (40)) but does NOT touch clause (101), which was read against the enacted text on 3 August 2026. The trap to re-check is not the number but the carve-outs: confirm a foreign-listed share still falls outside section 2(101)(b)(i), which turns on the words 'in India'.",
+      "act_transition": {
+        "ay2026_27_key": "foreign_share_long_term_holding",
+        "old": "Section 2(42A) of the Income-tax Act, 1961",
+        "new": "Section 2(101)(a) of the Income-tax Act, 2025, with the twelve-month carve-outs at section 2(101)(b)",
+        "change": "renumbered_only"
+      },
+      "sources": [
+        {
+          "authority": "Income-tax Act, 2025 (No. 30 of 2025), section 2(101), Gazette of India Extraordinary, Part II Section 1, 21 August 2025",
+          "url": "https://egazette.gov.in/WriteReadData/2025/265620.pdf"
+        },
+        {
+          "authority": "Finance Act, 2026 (No. 4 of 2026), section 35 -- the only amendment to section 2 of the Income-tax Act, 2025, confined to clauses (32) and (40)",
+          "url": "https://egazette.gov.in/WriteReadData/2026/271439.pdf"
+        }
+      ]
+    },
+
+    "black_money_s43_penalty_inr": {
+      "value": 1000000,
+      "unit": "INR",
+      "review": "annual",
+      "applies_to": "2027-28",
+      "verified_on": "2026-08-03",
+      "statute": "Section 43 of the Black Money (Undisclosed Foreign Income and Assets) and Imposition of Tax Act, 2015: a flat penalty per assessment year for failing to disclose a foreign asset, unrelated to the asset's value or to any tax shortfall. THE BLACK MONEY ACT IS SEPARATE LEGISLATION AND THE INCOME-TAX ACT, 2025 DOES NOT RENUMBER IT. The 2025 Act refers to the Black Money Act by name in several places (sections 247, 250 and 263(6)(c)(vi) among them) and amends none of it; section 43 is still section 43.",
+      "check": "Confirm the figure in section 43 is still Rs 10,00,000. Then confirm the harder thing, which the change of Act has made live: section 43 cures the default where the asset is disclosed in a return furnished under listed sub-sections of section 139 of the INCOME-TAX ACT, 1961 -- an Act repealed by section 536(1) of the Income-tax Act, 2025 from 1 April 2026. A tax year 2026-27 return is furnished under section 263 of the 2025 Act, not section 139 of the 1961 Act, and the Finance Act, 2026 amended only sections 49 and 50 of the Black Money Act, leaving section 43's cross-reference untouched. Whether a section 263 return reads onto section 43's list is UNRESOLVED and is exactly the kind of consequential-amendment gap a transition year produces. Take advice rather than assuming either answer.",
+      "act_transition": {
+        "ay2026_27_key": "black_money_s43_penalty_inr",
+        "old": "Black Money (Undisclosed Foreign Income and Assets) and Imposition of Tax Act, 2015, section 43",
+        "new": "Black Money (Undisclosed Foreign Income and Assets) and Imposition of Tax Act, 2015, section 43 -- unchanged",
+        "change": "unchanged_separate_legislation"
+      },
+      "sources": [
+        {
+          "authority": "Black Money (Undisclosed Foreign Income and Assets) and Imposition of Tax Act, 2015, section 43",
+          "url": "https://incometaxindia.gov.in/Pages/acts/index.aspx"
+        },
+        {
+          "authority": "Finance Act, 2026 (No. 4 of 2026), Part III, section 160 -- the whole of what the Finance Act, 2026 does to the Black Money Act, being provisos to sections 49 and 50 only",
+          "url": "https://egazette.gov.in/WriteReadData/2026/271439.pdf"
+        },
+        {
+          "authority": "Income-tax Act, 2025 (No. 30 of 2025), section 536 (repeal of the Income-tax Act, 1961) and section 263 (filing of return), which together create the cross-reference question described above",
+          "url": "https://egazette.gov.in/WriteReadData/2025/265620.pdf"
+        }
+      ]
+    },
+
+    "black_money_relief_threshold_inr": {
+      "value": 2000000,
+      "unit": "INR",
+      "review": "annual",
+      "applies_to": "2027-28",
+      "verified_on": "2026-08-03",
+      "statute": "The proviso to section 43 of the Black Money Act, inserted by the Finance (No. 2) Act 2024 with effect from 1 October 2024, disapplies the penalty where the aggregate value of the foreign assets other than immovable property does not exceed this figure. It replaced an earlier Rs 5,00,000 bank-balance carve-out, so it has moved once already. Not renumbered by the Income-tax Act, 2025 -- separate legislation.",
+      "check": "Confirm the figure, and confirm immovable property is still excluded from the relief. Verified on 3 August 2026 against the enacted Finance Act, 2026: section 160 inserts the same Rs 20,00,000 non-immovable-property proviso into section 49 (prosecution for failure to furnish a return) and section 50 (prosecution for failure to disclose in a return), both deemed inserted with effect from 1 October 2024, and disturbs section 43's own proviso not at all. So the three now move together and a future Finance Act is likely to move them together too. The proviso still fixes no valuation date for shares, which is why the threshold report shows two bases. Read also Chapter IV of the Finance Act, 2026, 'The Foreign Assets of Small Taxpayers Disclosure Scheme, 2026' (sections 130 onwards), which is a separate one-off route and not a change to this figure.",
+      "act_transition": {
+        "ay2026_27_key": "black_money_relief_threshold_inr",
+        "old": "Black Money Act, 2015, proviso to section 43",
+        "new": "Black Money Act, 2015, proviso to section 43 -- unchanged; matching provisos now also in sections 49 and 50",
+        "change": "unchanged_separate_legislation"
+      },
+      "sources": [
+        {
+          "authority": "Finance Act, 2026 (No. 4 of 2026), Part III, section 160, inserting matching Rs 20,00,000 provisos into sections 49 and 50 of the Black Money Act with effect from 1 October 2024 -- Gazette of India Extraordinary, Part II Section 1, 30 March 2026",
+          "url": "https://egazette.gov.in/WriteReadData/2026/271439.pdf"
+        },
+        {
+          "authority": "Black Money (Undisclosed Foreign Income and Assets) and Imposition of Tax Act, 2015, section 43 proviso",
+          "url": "https://incometaxindia.gov.in/Pages/acts/index.aspx"
+        }
+      ]
+    },
+
+    "foreign_tax_credit_statement_deadline": {
+      "value": {
+        "form": "Form No. 44",
+        "rule": "rule 76 of the Income-tax Rules, 2026",
+        "basis": "twelve_months_from_the_end_of_the_tax_year",
+        "date": "2028-03-31",
+        "conditional_on": "the return for the tax year being furnished within the time specified under section 263(1) or section 263(4)",
+        "updated_return_basis": "on or before the date the section 263(6)(a) return is furnished"
+      },
+      "review": "annual",
+      "applies_to": "2027-28",
+      "verified_on": "2026-08-03",
+      "statute": "Rule 76 of the Income-tax Rules, 2026 (CBDT Notification No. 22/2026, G.S.R. 198(E), 20 March 2026, in force 1 April 2026). Rule 76(10)(a) requires the statement in Form No. 44; rule 76(12) requires it 'within twelve months from the end of the relevant tax year', conditional on the return having been furnished within the time specified under section 263(1) or (4); rule 76(13) fixes the updated-return case -- where the return is furnished under section 263(6)(a), Form No. 44 for the income included in that updated return is due on or before the date the return is furnished. For tax year 2026-27, twelve months from 31 March 2027 is 31 March 2028. Two substantive changes from Form 67: rule 76(16) requires an accountant defined in section 515(3)(b) to verify Form No. 44 where the assessee is a company or where foreign tax paid for the tax year is Rs 1,00,000 or more; and rule 76(14)-(15) introduce Form No. 45, an intimation where a later event results in a refund of foreign tax for which credit was claimed.",
+      "check": "The date moves with the tax year, so re-derive it -- and re-derive it from the RIGHT basis, because the basis itself changed. Form 67 ran to the end of the assessment year; Form No. 44 runs twelve months from the end of the tax year. For tax year 2026-27 those two happen to give the same date, 31 March 2028, which is precisely why copying the old reasoning forward will look right and be wrong the first time they diverge. Also re-read rule 76(16): the Rs 1,00,000 accountant-verification trigger is a figure a later notification can move, and it is the one that turns a self-filed form into a professional engagement.",
+      "act_transition": {
+        "ay2026_27_key": "form_67_deadline",
+        "old": "Form No. 67 under rule 128(9) of the Income-tax Rules, 1962, due on or before the end of the assessment year, conditional on a section 139(1) or 139(4) return, with the section 139(8A) proviso",
+        "new": "Form No. 44 under rule 76(10) of the Income-tax Rules, 2026, due within twelve months from the end of the tax year, conditional on a section 263(1) or 263(4) return, with the section 263(6)(a) proviso -- plus accountant verification under rule 76(16) and the new Form No. 45",
+        "change": "renumbered_and_substantive"
+      },
+      "sources": [
+        {
+          "authority": "CBDT Notification No. 22/2026, G.S.R. 198(E), 20 March 2026 -- Income-tax Rules, 2026, rule 76 and Form No. 44",
+          "url": "https://www.incometax.gov.in/iec/foportal/sites/default/files/2026-03/En-Notified-IT-Rules-2026-20-03-2026.pdf"
+        },
+        {
+          "authority": "Income-tax Act, 2025 (No. 30 of 2025), sections 159 and 160 (relief from double taxation and the credit rule 76 gives effect to) and section 263(1), (4) and (6)(a)",
+          "url": "https://egazette.gov.in/WriteReadData/2025/265620.pdf"
+        }
+      ]
+    },
+
+    "revised_return_deadline": {
+      "value": {"date": "2028-03-31", "section": "263(5)", "fee_free_until": "2027-12-31"},
+      "review": "annual",
+      "applies_to": "2027-28",
+      "verified_on": "2026-08-03",
+      "statute": "Section 263(5) of the Income-tax Act, 2025 as substituted by section 66(b) of the Finance Act, 2026 (No. 4 of 2026): a person who has furnished a return under section 263(1) or (4) and discovers any omission or wrong statement may, 'subject to the provisions of section 428(b), furnish a revised return at any time within twelve months from the end of the relevant tax year, or before the completion of the assessment, whichever is earlier'. For tax year 2026-27 that is 31 March 2028. Section 96 of the same Finance Act substitutes a new section 428, whose clause (b) charges a fee where the section 263(5) return is furnished 'beyond nine months from the end of relevant tax year' -- Rs 1,000 where total income does not exceed Rs 5,00,000 and Rs 5,000 otherwise. Nine months from 31 March 2027 is 31 December 2027, so revision is free until then and costs a fee for the last quarter of the window. This matters here because a revised return is in the list of provisions whose filing cures a Schedule FA omission under section 43 of the Black Money Act, while an updated return is not -- though see the black_money_s43_penalty_inr entry, because that list still names section 139 of the repealed 1961 Act.",
+      "check": "Re-derive both dates: the twelve-month deadline and the nine-month fee point both move with the tax year, and the second limb -- completion of the assessment -- can close the window earlier than either. Note that the 2025 Act's version is internally coherent in a way the 1961 Act's was not: the AY 2026-27 registry records that section 234-I of the 1961 Act, as enacted, measures its nine and twelve months from the end of the ASSESSMENT year, which puts the fee window entirely after section 139(5) has closed and makes it unreachable. Section 428(b) of the 2025 Act measures from the end of the TAX year and does bite. Do not carry the 1961-Act reasoning across.",
+      "act_transition": {
+        "ay2026_27_key": "revised_return_deadline",
+        "old": "Section 139(5) of the Income-tax Act, 1961 as substituted by section 5(b) of the Finance Act, 2026 -- end of the relevant assessment year; fee under section 234-I inserted by section 16 of that Act",
+        "new": "Section 263(5) of the Income-tax Act, 2025 as substituted by section 66(b) of the Finance Act, 2026 -- twelve months from the end of the relevant tax year; fee under section 428(b) as substituted by section 96 of that Act, biting after nine months",
+        "change": "renumbered_and_substantive"
+      },
+      "sources": [
+        {
+          "authority": "Finance Act, 2026 (No. 4 of 2026), section 66(b) substituting section 263(5), and section 96 substituting sections 427 and 428, of the Income-tax Act, 2025 -- Gazette of India Extraordinary, Part II Section 1, 30 March 2026",
+          "url": "https://egazette.gov.in/WriteReadData/2026/271439.pdf"
+        },
+        {
+          "authority": "Income-tax Act, 2025 (No. 30 of 2025), section 263 as enacted",
+          "url": "https://egazette.gov.in/WriteReadData/2025/265620.pdf"
+        },
+        {
+          "authority": "Memorandum explaining the provisions of the Finance Bill, 2026",
+          "url": "https://www.indiabudget.gov.in/doc/memo.pdf"
+        }
+      ]
+    },
+
+    "mf_grandfathering_cutoff_date": {
+      "value": "2018-02-01",
+      "review": "stable",
+      "applies_to": "all",
+      "verified_on": "2026-08-03",
+      "statute": "Section 90(7) of the Income-tax Act, 2025 applies the grandfathered cost of acquisition to a long-term capital asset 'being an equity share in a company or a unit of an equity oriented fund or a unit of a business trust referred to in section 198, acquired BEFORE the 1st February, 2018'. A unit acquired ON 1 February 2018 is outside the rule entirely. The formula is higher of (a) the actual cost and (b) lower of (i) the fair market value and (ii) the full value of consideration -- so grandfathering can never manufacture a loss.",
+      "check": "Nothing to check annually. A historical date fixed by statute.",
+      "act_transition": {
+        "ay2026_27_key": null,
+        "old": "Section 55(2)(ac) of the Income-tax Act, 1961 (never in rules/AY2026-27.json -- deliberately out of scope there, because foreign shares are not section 112A assets)",
+        "new": "Section 90(7) of the Income-tax Act, 2025",
+        "change": "new_entry"
+      },
+      "sources": [
+        {
+          "authority": "Income-tax Act, 2025 (No. 30 of 2025), section 90(7), Gazette of India Extraordinary, Part II Section 1, 21 August 2025",
+          "url": "https://egazette.gov.in/WriteReadData/2025/265620.pdf"
+        }
+      ]
+    },
+
+    "mf_grandfathering_valuation_date": {
+      "value": "2018-01-31",
+      "review": "stable",
+      "applies_to": "all",
+      "verified_on": "2026-08-03",
+      "statute": "Section 90(8)(b) of the Income-tax Act, 2025 fixes the fair market value 'as on the 31st January, 2018' in every limb. Note that this is a DIFFERENT date from the acquisition cutoff in section 90(7), one day earlier, and the two are not interchangeable.",
+      "check": "Nothing to check annually. A historical date fixed by statute.",
+      "act_transition": {
+        "ay2026_27_key": null,
+        "old": "Section 55(2)(ac) of the Income-tax Act, 1961",
+        "new": "Section 90(8)(b) of the Income-tax Act, 2025",
+        "change": "new_entry"
+      },
+      "sources": [
+        {
+          "authority": "Income-tax Act, 2025 (No. 30 of 2025), section 90(8)(b), Gazette of India Extraordinary, Part II Section 1, 21 August 2025",
+          "url": "https://egazette.gov.in/WriteReadData/2025/265620.pdf"
+        }
+      ]
+    },
+
+    "mf_grandfathering_fmv_basis_unlisted": {
+      "value": "net_asset_value",
+      "review": "stable",
+      "applies_to": "all",
+      "verified_on": "2026-08-03",
+      "statute": "Section 90(8)(b)(iii) of the Income-tax Act, 2025: 'if the capital asset is a unit which is not listed on a recognised stock exchange as on the 31st January, 2018, the net asset value of such unit as on that date'. Net asset value, full stop. Not the repurchase price, not the sale price, not the price the unit could have been exited at.",
+      "check": "Nothing to check annually. But read implementation_trap below before writing any code that consumes AMFI's file -- it is the reason this entry exists as a rule rather than as a comment.",
+      "implementation_trap": {
+        "name": "amfi_nav_column",
+        "severity": "silent_wrong_answer",
+        "what": "AMFI's NAV history file for 31 January 2018 is semicolon-delimited with the header 'Scheme Code;Scheme Name;ISIN Div Payout/ISIN Growth;ISIN Div Reinvestment;Net Asset Value;Repurchase Price;Sale Price;Date'. It carries BOTH a Net Asset Value column and a Repurchase Price column, and on a measurement of the live file they differ on 4,756 of its 9,502 rows -- 50.1%. The statute requires net asset value. Reading the Repurchase Price column instead understates the grandfathered cost basis on half of all schemes, by roughly the exit load, and produces a completely plausible-looking number with no error anywhere.",
+        "so": "Any lookup must read the 'Net Asset Value' column by name, never by position and never the adjacent column, and must be covered by a test whose fixture row has the two columns DIFFERENT so that swapping them fails. Two further properties of the same file: it has two ISIN columns (Growth/Div-Payout and Div-Reinvestment) and a lookup must index both; and about 5% of rows carry no ISIN at all (9,003 of 9,502 rows have one, 9,002 distinct), so the AMFI scheme code is the fallback key and name matching is not an acceptable substitute.",
+        "data_source": "https://portal.amfiindia.com/DownloadNAVHistoryReport_Po.aspx?frmdt=31-Jan-2018&todt=31-Jan-2018",
+        "data_source_note": "AMFI is where the datum lives, not the authority for the rule. The authority is section 90(8)(b)(iii), cited above. The file is a snapshot of a date now eight years past and is immutable, so vendor it with a recorded SHA-256 rather than fetching it at compute time."
+      },
+      "act_transition": {
+        "ay2026_27_key": null,
+        "old": "Section 55(2)(ac) Explanation (a)(ii) of the Income-tax Act, 1961",
+        "new": "Section 90(8)(b)(iii) of the Income-tax Act, 2025",
+        "change": "new_entry"
+      },
+      "sources": [
+        {
+          "authority": "Income-tax Act, 2025 (No. 30 of 2025), section 90(8)(b)(iii), Gazette of India Extraordinary, Part II Section 1, 21 August 2025",
+          "url": "https://egazette.gov.in/WriteReadData/2025/265620.pdf"
+        }
+      ]
+    },
+
+    "mf_grandfathering_fmv_basis_listed": {
+      "value": "highest_price_quoted_on_the_exchange_on_31_january_2018",
+      "review": "stable",
+      "applies_to": "all",
+      "verified_on": "2026-08-03",
+      "statute": "Section 90(8)(b)(i) of the Income-tax Act, 2025: where the capital asset is listed on a recognised stock exchange as on 31 January 2018, the fair market value is 'the highest price of the capital asset quoted on such exchange on that date'; and section 90(8)(b)(ii) falls back to the highest price on the immediately preceding date on which it was traded, if there was no trading on 31 January 2018. Recorded separately from the unlisted basis because an exchange-traded fund IS listed, so an ETF unit takes this limb and exchange bhav-copy data, not AMFI's NAV file -- and a single folio can hold both kinds.",
+      "check": "Nothing to check annually.",
+      "act_transition": {
+        "ay2026_27_key": null,
+        "old": "Section 55(2)(ac) Explanation (a)(i) of the Income-tax Act, 1961",
+        "new": "Section 90(8)(b)(i) and (ii) of the Income-tax Act, 2025",
+        "change": "new_entry"
+      },
+      "sources": [
+        {
+          "authority": "Income-tax Act, 2025 (No. 30 of 2025), section 90(8)(b)(i) and (ii), Gazette of India Extraordinary, Part II Section 1, 21 August 2025",
+          "url": "https://egazette.gov.in/WriteReadData/2025/265620.pdf"
+        }
+      ]
+    },
+
+    "specified_mf_deemed_short_term": {
+      "value": true,
+      "review": "stable",
+      "applies_to": "all",
+      "verified_on": "2026-08-03",
+      "statute": "Section 76(1) of the Income-tax Act, 2025: 'Irrespective of anything contained in section 2(101) or section 72, the gains on the transfer or redemption or maturity, of a capital asset as mentioned in sub-section (2) shall be treated as short-term capital gains'. Section 76(2)(a) puts a unit of a Specified Mutual Fund acquired on or after 1 April 2023 inside that rule. So the holding period is irrelevant: ten years in such a unit is still short-term. Section 76(3) computes the gain as X = A - B - C (consideration, less cost, less transfer expenditure) and section 76(4) allows no deduction for securities transaction tax.",
+      "check": "Nothing to check annually in the deeming rule itself. The DEFINITION it hangs on is a different matter -- see specified_mf_debt_threshold_pct, which is flagged contested.",
+      "implementation_trap": {
+        "name": "specified_mf_overrides_holding_period",
+        "severity": "silent_wrong_answer",
+        "what": "Section 76(1) opens 'Irrespective of anything contained in section 2(101) or section 72'. A pipeline that computes holding_days first and branches on it -- which is the obvious way to write it, and is what itrprep/positions.py does today for foreign shares -- classifies every one of these units long-term whenever it has been held over the threshold, and gets the rate, the schedule and the tax all wrong.",
+        "so": "The section 76 test must be evaluated BEFORE any holding-period arithmetic, per lot, and must short-circuit it. The per-lot part is not incidental: a unit of the same scheme bought on 31 March 2023 is outside section 76(2)(a) and follows ordinary rules, while one bought on 1 April 2023 is inside it and is always short-term, so a single folio routinely holds lots on both sides of the line. Any implementation needs a test with exactly that shape -- one folio, one scheme, two lots straddling 1 April 2023, held well beyond the long-term threshold, asserting one long-term and one short-term result."
+      },
+      "act_transition": {
+        "ay2026_27_key": null,
+        "old": "Section 50AA of the Income-tax Act, 1961",
+        "new": "Section 76(1) and 76(2)(a) of the Income-tax Act, 2025",
+        "change": "new_entry"
+      },
+      "sources": [
+        {
+          "authority": "Income-tax Act, 2025 (No. 30 of 2025), section 76, Gazette of India Extraordinary, Part II Section 1, 21 August 2025",
+          "url": "https://egazette.gov.in/WriteReadData/2025/265620.pdf"
+        }
+      ]
+    },
+
+    "specified_mf_acquisition_cutoff_date": {
+      "value": "2023-04-01",
+      "review": "stable",
+      "applies_to": "all",
+      "verified_on": "2026-08-03",
+      "statute": "Section 76(2)(a) of the Income-tax Act, 2025: the deeming rule reaches 'a unit of a Specified Mutual Fund acquired on or after the 1st April, 2023 or a Market Linked Debenture'. On or after, so a unit acquired on 1 April 2023 is inside. Section 76(2)(b) adds an unlisted bond or debenture transferred, redeemed or maturing on or after 23 July 2024, which is a different asset class and a different date.",
+      "check": "Nothing to check annually. A historical date fixed by statute.",
+      "act_transition": {
+        "ay2026_27_key": null,
+        "old": "Section 50AA of the Income-tax Act, 1961",
+        "new": "Section 76(2)(a) of the Income-tax Act, 2025",
+        "change": "new_entry"
+      },
+      "sources": [
+        {
+          "authority": "Income-tax Act, 2025 (No. 30 of 2025), section 76(2), Gazette of India Extraordinary, Part II Section 1, 21 August 2025",
+          "url": "https://egazette.gov.in/WriteReadData/2025/265620.pdf"
+        }
+      ]
+    },
+
+    "specified_mf_debt_threshold_pct": {
+      "value": 65,
+      "unit": "percent",
+      "review": "annual",
+      "applies_to": "2027-28",
+      "contested": true,
+      "verified_on": "2026-08-03",
+      "statute": "Section 76(5)(b) of the Income-tax Act, 2025: a 'Specified Mutual Fund' is a Mutual Fund which 'invests more than 65% of its total proceeds in debt and money market instruments or a fund which invests 65% or more of its total proceeds in units of such Mutual Fund', with the percentage 'computed with reference to the annual average of the daily closing figures' and 'debt and money market instruments' taking their SEBI classification. Note the two limbs use different comparators -- more than 65% for the direct test, 65% or more for the fund-of-funds test.",
+      "check": "CONTESTED, and the reason is recorded rather than resolved. Secondary commentary refers to a 90-day or liquidity-buffer carve-out having been added to this definition by the Finance Act, 2026. It is not there. The enacted Gazette text of the Finance Act, 2026 was read on 3 August 2026 and its Part B, which amends the Income-tax Act, 2025 at clauses 35 to 122, does not touch section 76 at all -- section 2 is amended only at clauses (32) and (40). So no primary source supports the carve-out and the definition above is the enacted one. What could NOT be established is the negative: the department's consolidated 'as amended' PDF of the Act returns HTTP 403 to every automated client, browser headers included, so a change made by some instrument other than the Finance Act, 2026 cannot be ruled out by reading. Settle this against the department's consolidated text, by hand in a browser, before classifying a single scheme. The definition has already moved twice -- Finance Act 2023 introduced it on a 'more than 35% in domestic equity' test, and the Finance (No. 2) Act 2024 replaced that with the present debt test with effect from AY 2026-27 -- so assume it will move again.",
+      "act_transition": {
+        "ay2026_27_key": null,
+        "old": "Explanation to section 50AA of the Income-tax Act, 1961",
+        "new": "Section 76(5)(b) of the Income-tax Act, 2025",
+        "change": "new_entry"
+      },
+      "sources": [
+        {
+          "authority": "Income-tax Act, 2025 (No. 30 of 2025), section 76(5)(b), Gazette of India Extraordinary, Part II Section 1, 21 August 2025",
+          "url": "https://egazette.gov.in/WriteReadData/2025/265620.pdf"
+        },
+        {
+          "authority": "Finance Act, 2026 (No. 4 of 2026), Part B of Chapter III -- the complete list of its amendments to the Income-tax Act, 2025, which does not include section 76",
+          "url": "https://egazette.gov.in/WriteReadData/2026/271439.pdf"
+        }
+      ]
+    },
+
+    "mf_equity_oriented_threshold_pct": {
+      "value": {"direct": 65, "fund_of_funds": 90},
+      "unit": "percent",
+      "review": "stable",
+      "applies_to": "all",
+      "verified_on": "2026-08-03",
+      "statute": "Section 198(8) of the Income-tax Act, 2025 defines 'equity oriented fund'. Sub-clause (ii), the ordinary case, requires 'a minimum of 65% of the total proceeds of such fund' to be invested in the equity shares of domestic companies listed on a recognised stock exchange. Sub-clause (i), the fund-of-funds case, requires 90% of the fund's proceeds to be in the units of an exchange-traded fund AND 90% of that fund's proceeds to be in listed domestic equity. Proviso (I) computes the percentage 'with reference to the annual average of the monthly averages of the opening and closing figures'. Section 196(5) borrows the same definition for short-term gains.",
+      "check": "Nothing to check annually in the thresholds themselves. What must never be automated is the CLASSIFICATION: the test is an annual average of monthly averages of a scheme's actual portfolio, published nowhere in machine-readable form. It is not in AMFI's NAV file, not in the ISIN, and not derivable from the SEBI scheme category, which is a product taxonomy that overlaps but does not coincide -- an arbitrage fund is equity-oriented for tax while a conservative hybrid is not. Treat the classification as a declared per-scheme input with a doctor check, cross-checked against the equity/non-equity segregation in the registrar's own capital gains statement, and never as an inference from a scheme name.",
+      "act_transition": {
+        "ay2026_27_key": null,
+        "old": "Explanation to section 112A of the Income-tax Act, 1961",
+        "new": "Section 198(8) of the Income-tax Act, 2025, applied to short-term gains by section 196(5)",
+        "change": "new_entry"
+      },
+      "sources": [
+        {
+          "authority": "Income-tax Act, 2025 (No. 30 of 2025), sections 198(8) and 196(5), Gazette of India Extraordinary, Part II Section 1, 21 August 2025",
+          "url": "https://egazette.gov.in/WriteReadData/2025/265620.pdf"
+        }
+      ]
+    },
+
+    "ltcg_equity_rate_pct": {
+      "value": 12.5,
+      "unit": "percent",
+      "review": "annual",
+      "applies_to": "2027-28",
+      "verified_on": "2026-08-03",
+      "statute": "Section 198(2)(a) of the Income-tax Act, 2025: 'income-tax calculated on such long-term capital gains exceeding Rs 125000 at the rate of 12.5%'. Section 198(1) fixes what it applies to -- a long-term capital asset being an equity share, a unit of an equity oriented fund or a unit of a business trust, on which securities transaction tax has been paid. Section 198(1)(c) states the STT condition asymmetrically: on acquisition AND transfer for an equity share, on transfer alone for a unit. Note that the 2025 Act writes the rate into the Act itself rather than leaving it to a Finance Act schedule.",
+      "check": "Verified against the enacted Finance Act, 2026 on 3 August 2026: its Part B does not amend section 198. Re-read section 198(2)(a) against the assessment year's Finance Act -- the rate moved on 23 July 2024, within living memory of the current form, and a rate written into the Act is amended by a Finance Act clause rather than by a schedule, so the place to look has changed too.",
+      "act_transition": {
+        "ay2026_27_key": null,
+        "old": "Section 112A of the Income-tax Act, 1961",
+        "new": "Section 198(2)(a) of the Income-tax Act, 2025",
+        "change": "new_entry"
+      },
+      "sources": [
+        {
+          "authority": "Income-tax Act, 2025 (No. 30 of 2025), section 198, Gazette of India Extraordinary, Part II Section 1, 21 August 2025",
+          "url": "https://egazette.gov.in/WriteReadData/2025/265620.pdf"
+        },
+        {
+          "authority": "Finance Act, 2026 (No. 4 of 2026), Part B of Chapter III -- does not amend section 198 of the Income-tax Act, 2025",
+          "url": "https://egazette.gov.in/WriteReadData/2026/271439.pdf"
+        }
+      ]
+    },
+
+    "ltcg_equity_exemption_inr": {
+      "value": 125000,
+      "unit": "INR",
+      "review": "annual",
+      "applies_to": "2027-28",
+      "verified_on": "2026-08-03",
+      "statute": "Section 198(2)(a) of the Income-tax Act, 2025 charges tax only on long-term capital gains 'exceeding Rs 125000'. The same figure appears independently in rule 164 of the Income-tax Rules, 2026, which lets a person with only section 198 long-term gains not exceeding Rs 1,25,000 file ITR-1 -- a useful corroboration that the figure is the operative one for tax year 2026-27.",
+      "check": "Verified against the enacted Finance Act, 2026 on 3 August 2026: its Part B does not amend section 198. Re-read it against the assessment year's Finance Act; the threshold moved from Rs 1,00,000 on 23 July 2024.",
+      "act_transition": {
+        "ay2026_27_key": null,
+        "old": "Section 112A(2) of the Income-tax Act, 1961",
+        "new": "Section 198(2)(a) of the Income-tax Act, 2025",
+        "change": "new_entry"
+      },
+      "sources": [
+        {
+          "authority": "Income-tax Act, 2025 (No. 30 of 2025), section 198(2)(a), Gazette of India Extraordinary, Part II Section 1, 21 August 2025",
+          "url": "https://egazette.gov.in/WriteReadData/2025/265620.pdf"
+        },
+        {
+          "authority": "CBDT Notification No. 22/2026, G.S.R. 198(E), 20 March 2026 -- Income-tax Rules, 2026, rule 164(2)(d), carrying the same Rs 1,25,000 figure for tax year 2026-27",
+          "url": "https://www.incometax.gov.in/iec/foportal/sites/default/files/2026-03/En-Notified-IT-Rules-2026-20-03-2026.pdf"
+        }
+      ]
+    },
+
+    "stcg_equity_rate_pct": {
+      "value": 20,
+      "unit": "percent",
+      "review": "annual",
+      "applies_to": "2027-28",
+      "verified_on": "2026-08-03",
+      "statute": "Section 196(1)(i) of the Income-tax Act, 2025: where total income includes short-term capital gains on an equity share, a unit of an equity oriented fund or a unit of a business trust, and the sale is chargeable to securities transaction tax, the tax is 'income-tax calculated on such short-term capital gains at the rate of 20%'.",
+      "check": "Verified against the enacted Finance Act, 2026 on 3 August 2026: its Part B does not amend section 196. Re-read it against the assessment year's Finance Act; the rate was 15% before 23 July 2024.",
+      "act_transition": {
+        "ay2026_27_key": null,
+        "old": "Section 111A of the Income-tax Act, 1961",
+        "new": "Section 196(1)(i) of the Income-tax Act, 2025",
+        "change": "new_entry"
+      },
+      "sources": [
+        {
+          "authority": "Income-tax Act, 2025 (No. 30 of 2025), section 196, Gazette of India Extraordinary, Part II Section 1, 21 August 2025",
+          "url": "https://egazette.gov.in/WriteReadData/2025/265620.pdf"
+        },
+        {
+          "authority": "Finance Act, 2026 (No. 4 of 2026), Part B of Chapter III -- does not amend section 196 of the Income-tax Act, 2025",
+          "url": "https://egazette.gov.in/WriteReadData/2026/271439.pdf"
+        }
+      ]
+    },
+
+    "ltcg_other_rate_pct": {
+      "value": 12.5,
+      "unit": "percent",
+      "review": "annual",
+      "applies_to": "2027-28",
+      "verified_on": "2026-08-03",
+      "statute": "Section 197(1)(b) of the Income-tax Act, 2025: on a long-term capital gain not caught by section 198, the tax is 'income-tax calculated on such long-term capital gains at the rate of 12.5%'. This is the rate a non-equity unit held beyond twenty-four months attracts, and it is also the rate this tool's own foreign-share long-term block falls under. Indexation is gone for units: section 197(3) preserves an indexed alternative only for land or building acquired before 23 July 2024, so a design carrying a Cost Inflation Index table for units is carrying dead weight.",
+      "check": "Verified against the enacted Finance Act, 2026 on 3 August 2026: its Part B does not amend section 197. Re-read it against the assessment year's Finance Act, and re-read section 197(3) at the same time -- the land-and-building carve-out is the kind of provision that gets widened.",
+      "act_transition": {
+        "ay2026_27_key": null,
+        "old": "Section 112 of the Income-tax Act, 1961",
+        "new": "Section 197(1)(b) of the Income-tax Act, 2025",
+        "change": "new_entry"
+      },
+      "sources": [
+        {
+          "authority": "Income-tax Act, 2025 (No. 30 of 2025), section 197, Gazette of India Extraordinary, Part II Section 1, 21 August 2025",
+          "url": "https://egazette.gov.in/WriteReadData/2025/265620.pdf"
+        },
+        {
+          "authority": "Finance Act, 2026 (No. 4 of 2026), Part B of Chapter III -- does not amend section 197 of the Income-tax Act, 2025",
+          "url": "https://egazette.gov.in/WriteReadData/2026/271439.pdf"
+        }
+      ]
+    },
+
+    "mf_holding_period_months": {
+      "value": {"equity_oriented": 12, "listed_security": 12, "default": 24},
+      "review": "annual",
+      "applies_to": "2027-28",
+      "verified_on": "2026-08-03",
+      "statute": "Section 2(101) of the Income-tax Act, 2025. Sub-clause (a) sets the default at 'not more than twenty-four months'. Sub-clause (b) substitutes twelve months where the asset is (i) a security listed in a recognised stock exchange in India, (ii) a Unit Trust of India unit, (iii) a unit of an equity-oriented fund, or (iv) a zero-coupon bond. So: an equity-oriented fund unit is twelve months whether held in demat or statement-of-account form, a listed ETF unit is twelve months because it is a listed security, and an UNLISTED debt or hybrid unit falls to the twenty-four month default. The frequently repeated 'thirty-six months for debt funds' is obsolete and the equally frequent 'twenty-four months for all non-equity funds' is wrong for listed units.",
+      "check": "Verified against the enacted Finance Act, 2026 on 3 August 2026: section 35 of that Act amends section 2 of the Income-tax Act, 2025 only at clauses (32) and (40), leaving clause (101) untouched. Re-read section 2(101) against the assessment year's Finance Act. Note that this entry is subordinate to specified_mf_deemed_short_term: a Specified Mutual Fund unit acquired on or after 1 April 2023 is never long-term whatever this entry says.",
+      "act_transition": {
+        "ay2026_27_key": null,
+        "old": "Section 2(42A) of the Income-tax Act, 1961",
+        "new": "Section 2(101)(a) and (b) of the Income-tax Act, 2025",
+        "change": "new_entry"
+      },
+      "sources": [
+        {
+          "authority": "Income-tax Act, 2025 (No. 30 of 2025), section 2(101), Gazette of India Extraordinary, Part II Section 1, 21 August 2025",
+          "url": "https://egazette.gov.in/WriteReadData/2025/265620.pdf"
+        },
+        {
+          "authority": "Finance Act, 2026 (No. 4 of 2026), section 35 -- the only amendment to section 2 of the Income-tax Act, 2025",
+          "url": "https://egazette.gov.in/WriteReadData/2026/271439.pdf"
+        }
+      ]
+    },
+
+    "mf_unit_indexation_available": {
+      "value": false,
+      "review": "annual",
+      "applies_to": "2027-28",
+      "verified_on": "2026-08-03",
+      "statute": "No provision of the Income-tax Act, 2025 gives an indexed cost of acquisition to a mutual fund unit. The Act retains indexation machinery -- section 72(8) defines indexed cost of acquisition and improvement, and section 197(6)(d) carries the definitions into the long-term rate provision -- but section 197(3) confines the indexed alternative to a long-term capital asset 'being land or building, or both, which was acquired before the 23rd July, 2024', in the hands of a resident individual or HUF. Units are not land or building. Stating the negative is the point: it makes 'no indexation for units' a checked assertion rather than an omission.",
+      "check": "Re-read section 197(3) against the assessment year's Finance Act. This is a negative assertion, so the failure mode is a provision being ADDED rather than changed, which is harder to notice -- search the Finance Act for 'indexed cost' rather than for a section number.",
+      "act_transition": {
+        "ay2026_27_key": null,
+        "old": "Second proviso to section 48 of the Income-tax Act, 1961, as restricted by the Finance (No. 2) Act 2024",
+        "new": "Section 197(3) of the Income-tax Act, 2025, read with section 72(8)",
+        "change": "new_entry"
+      },
+      "sources": [
+        {
+          "authority": "Income-tax Act, 2025 (No. 30 of 2025), sections 197(3) and 72(8), Gazette of India Extraordinary, Part II Section 1, 21 August 2025",
+          "url": "https://egazette.gov.in/WriteReadData/2025/265620.pdf"
+        }
+      ]
+    },
+
+    "mf_lot_matching_method": {
+      "value": "FIFO",
+      "review": "stable",
+      "applies_to": "all",
+      "verified_on": "2026-08-03",
+      "statute": "Section 67(7)(c) of the Income-tax Act, 2025: where profits or gains arise from a transfer made by a depository or participant of a beneficial interest in securities, 'for the purposes of section 72 and section 2(101)(b), the cost of acquisition and the period of holding of any securities shall be determined on the basis of the first-in-first-out method'. Note that it fixes FIFO for BOTH legs -- which lot was sold and how long it was held -- in one provision. 'Security' takes its meaning from section 2(1)(l) of the Depositories Act, 1996, by section 67(8).",
+      "check": "Nothing to check annually, but one limitation is worth carrying forward rather than forgetting: section 67(7) is conditioned on a transfer 'made by the depository or participant', which on its face does not reach units held in statement-of-account form with a registrar. No provision of the 2025 Act mandating FIFO for that case was found. It is universal registrar practice, it is what the department's prefill reflects, and it is what any reconciliation will be against -- so implement FIFO and document it as the assumption, rather than offering an identified-lot alternative that no registrar supports and nothing would defend.",
+      "act_transition": {
+        "ay2026_27_key": null,
+        "old": "Section 45(2A) of the Income-tax Act, 1961",
+        "new": "Section 67(7)(c) of the Income-tax Act, 2025",
+        "change": "new_entry"
+      },
+      "sources": [
+        {
+          "authority": "Income-tax Act, 2025 (No. 30 of 2025), section 67(7) and 67(8), Gazette of India Extraordinary, Part II Section 1, 21 August 2025",
+          "url": "https://egazette.gov.in/WriteReadData/2025/265620.pdf"
+        }
+      ]
+    },
+
+    "mf_bonus_unit_cost": {
+      "value": 0,
+      "unit": "INR",
+      "review": "stable",
+      "applies_to": "all",
+      "verified_on": "2026-08-03",
+      "statute": "Section 90(6)(d) of the Income-tax Act, 2025: the cost of acquisition of 'the financial asset allotted to the assessee without any payment and on the basis of holding of any other financial asset' shall be taken to be nil. So a bonus unit has a nil basis. Distinguish an IDCW reinvestment, which is a real payment out of a real distribution and creates a lot at the reinvestment net asset value, from a bonus allotment, which does not.",
+      "check": "Nothing to check annually.",
+      "act_transition": {
+        "ay2026_27_key": null,
+        "old": "Section 55(2)(aa)(iiia) of the Income-tax Act, 1961",
+        "new": "Section 90(6)(d) of the Income-tax Act, 2025",
+        "change": "new_entry"
+      },
+      "sources": [
+        {
+          "authority": "Income-tax Act, 2025 (No. 30 of 2025), section 90(6)(d), Gazette of India Extraordinary, Part II Section 1, 21 August 2025",
+          "url": "https://egazette.gov.in/WriteReadData/2025/265620.pdf"
+        }
+      ]
+    }
+  }
+}

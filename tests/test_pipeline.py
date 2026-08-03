@@ -279,16 +279,18 @@ def main() -> int:
           f"expected {expected_cost_inr}, got {got_cost_inr} "
           f"(2x would be {expected_cost_inr * 2})")
 
-    # -- Schedule CG FX conversion follows Rule 115, not per-date rates --
+    # -- Schedule CG FX uses the specified date, not per-date rates --
     # Rule 115(2) of the Income-tax Rules, 1962 specifies "the last day of the month
     # immediately preceding" as the conversion date for both capital gains (sub-clause
-    # (f)) and dividend income (sub-clause (e)). Confirmed against a real broker's own
+    # (f)) and dividend income (sub-clause (e)); rule 206 of the Income-tax Rules, 2026
+    # restates the same convention as a table (Sl. Nos. 6 and 5) from tax year 2026-27,
+    # so the function is right for both Acts. Confirmed against a real broker's own
     # tax report, whose displayed per-leg exchange rate matched this specified date, not
     # the transaction's own date. Schedule FA is NOT affected -- it is separately, and
     # differently, pinned to per-date rates by the ITD's own step-by-step guide.
-    check("Rule 115 specified date is the last day of the PRECEDING month",
+    check("the specified date is the last day of the PRECEDING month",
           positions._rule115_specified_date(dt.date(2024, 8, 2)) == dt.date(2024, 7, 31))
-    check("Rule 115 specified date handles a January acquisition (year rollback)",
+    check("the specified date handles a January acquisition (year rollback)",
           positions._rule115_specified_date(dt.date(2024, 1, 15)) == dt.date(2023, 12, 31))
 
     rule115_txns = [

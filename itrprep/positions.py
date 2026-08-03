@@ -517,11 +517,17 @@ def _proceeds_by_lot(lots, transactions, year, fx):
 
 
 def _rule115_specified_date(d: dt.date) -> dt.date:
-    """Rule 115(2) "specified date": the last day of the month immediately preceding.
+    """The "specified date": the last day of the month immediately preceding.
 
-    Applies to Schedule CG (capital gains, sub-clause (f)) and Schedule OS dividend
-    income (sub-clause (e)) -- NOT to Schedule FA, which the ITD's own step-by-step
-    guide separately and explicitly pins to per-date TT-buy rates (see
+    Rule 206(2)(b)(i) of the Income-tax Rules, 2026 from tax year 2026-27; rule 115(2) of
+    the Income-tax Rules, 1962 for AY 2026-27 and earlier, which is the year this function
+    was written for and where its name comes from. The Rules of 2026 restate the same
+    convention as a table: capital gains at Table Sl. No. 6 and dividend income at Sl.
+    No. 5, where the Rules of 1962 had sub-clauses (f) and (e).
+
+    Applies to Schedule CG and Schedule OS dividend income -- NOT to Schedule FA, which
+    the ITD's own step-by-step guide separately and explicitly pins to per-date TT-buy
+    rates (see
     docs/VERIFIED_FINDINGS.md #10). Confirmed against a real broker's own tax report:
     their displayed per-leg exchange rate for both the purchase and the sale side of a
     trade matched this specified date exactly, not the actual transaction date's rate --
@@ -538,8 +544,9 @@ def compute_year_totals(lots, transactions, year, fx, rules=None) -> YearTotals:
     `year` argument here is the financial year's starting calendar year, so year=2025
     means FY 2025-26 = 1 Apr 2025 to 31 Mar 2026.
 
-    FX conversion here follows Rule 115(2) of the Income-tax Rules, 1962, NOT the
-    per-date convention Schedule FA uses -- see `_rule115_specified_date`.
+    FX conversion here follows the specified-date convention -- rule 206 of the Income-tax
+    Rules, 2026, rule 115(2) of the Rules of 1962 before that -- NOT the per-date
+    convention Schedule FA uses. See `_rule115_specified_date`.
 
     `rules` is a loaded rules registry; the newest on disk is used when none is given.
     The long-term holding period comes from it rather than from a literal here.
@@ -600,7 +607,8 @@ def compute_year_totals(lots, transactions, year, fx, rules=None) -> YearTotals:
             portion_usd = gross_usd * share
             # Sale-side expense (brokerage on the sell) reduces net consideration;
             # purchase-side expense (brokerage on the original buy) adds to cost of
-            # acquisition. Both deductible under Section 48.
+            # acquisition. Both deductible under s.72(1)(a) of the Income-tax Act, 2025
+            # (s.48 of the 1961 Act).
             proceeds_inr = to_inr_int((portion_usd - sale_expense_usd * share) * sale_rate)
             cost_rate, _ = fx.rate_on(_rule115_specified_date(lot.acquire_date))
             lot_expense_share = (

@@ -35,8 +35,9 @@ ACQ_KINDS = (ACQ_RSU_VEST, ACQ_ESPP, "OPEN_MARKET", "DRIP", "OTHER", "")
 #
 # TAX_WITHHOLDING is a "sell to cover": at vest the employer keeps part of the gross
 # shares to pay withholding tax. It is a genuine transfer of a foreign share -- the gross
-# count is what section 17(2)(vi) charges as a perquisite and what Schedule FA reports as
-# acquired, and the withheld part is a disposal on the same date -- but it can only come
+# count is what s.17(1)(d) of the Income-tax Act, 2025 charges as a perquisite (s.17(2)(vi)
+# of the 1961 Act) and what Schedule FA reports as acquired, and the withheld part is a
+# disposal on the same date -- but it can only come
 # out of the lot that same event created. Applied FIFO instead, it would draw shares from
 # an older lot the employee still holds, putting both lots' quantity and cost basis wrong.
 DISPOSAL_TAX_WITHHOLDING = "TAX_WITHHOLDING"
@@ -114,11 +115,13 @@ class Transaction:
     amount_usd: Decimal | None = None
     tax_withheld_usd: Decimal = Decimal(0)
     # Brokerage/commission on this transaction. On a BUY it adds to cost of acquisition;
-    # on a SELL it reduces net sale consideration. Both are deductible under Section 48.
+    # on a SELL it reduces net sale consideration. Both are deductible under s.72(1)(a) of
+    # the Income-tax Act, 2025 (s.48 of the 1961 Act).
     expense_usd: Decimal = Decimal(0)
     # What was actually paid per share, where that differs from price_usd: the discounted
-    # ESPP price. NOT a cost of acquisition -- section 49(2AA) makes that the FMV the
-    # perquisite was charged on under section 17(2)(vi), which price_usd holds, and the
+    # ESPP price. NOT a cost of acquisition -- s.73(1) of the Income-tax Act, 2025 makes
+    # that the FMV the perquisite was charged on under s.17(1)(d) (s.49(2AA) and
+    # s.17(2)(vi) of the 1961 Act), which price_usd holds, and the
     # discount has already been taxed as salary through Form 16. Kept because FMV minus
     # paid is the perquisite in Form 12BA, and it is the only evidence of the discount
     # that the export carries.
@@ -224,8 +227,9 @@ class Lot:
     price_usd: Decimal
     acq_kind: str = ""
     # Brokerage/commission paid to acquire this lot. Deductible against capital gains
-    # under Section 48 ("expenditure incurred wholly and exclusively in connection with
-    # such transfer"), so it belongs in cost of acquisition, not just informational.
+    # under s.72(1)(a) of the Income-tax Act, 2025 -- s.48 of the 1961 Act -- as
+    # "expenditure incurred wholly and exclusively in connection with such transfer", so
+    # it belongs in cost of acquisition, not just informational.
     purchase_expense_usd: Decimal = Decimal(0)
     # The acquisition row this lot was built from, as `file:line`. Carried so that the
     # acquisition date and initial value -- the two Table A3 fields with no other

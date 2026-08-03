@@ -13,6 +13,75 @@ notification changed it, because they may be filing an earlier year.
 
 ### Added
 
+- **`rules/AY2027-28.json` — the first registry under a different Act.** The Income-tax Act,
+  2025 (No. 30 of 2025, assented 21 August 2025) came into force on 1 April 2026 by its
+  section 1(3) and repealed the Income-tax Act, 1961 by its section 536(1), so **FY 2026-27
+  is the first year assessed under it** and almost every provision this tool cites was
+  renumbered. The new registry re-verifies and re-cites all twelve AY 2026-27 entries against
+  the Gazette text of the Act of 2025, the Income-tax Rules, 2026 (CBDT Notification No.
+  22/2026, G.S.R. 198(E), 20 March 2026) and the Finance Act, 2026 (No. 4 of 2026,
+  30 March 2026), and adds sixteen more. It also removes a live hazard: the registry's
+  forward guard hard-fails on an assessment year it has no file for, so this had to exist
+  before next July regardless.
+
+  Two entries changed in **substance**, not just number, and say so:
+  `form_67_deadline` became **`foreign_tax_credit_statement_deadline`** (Form No. 44 under
+  rule 76 of the Rules of 2026, twelve months from the end of the tax year, with an
+  accountant's verification under rule 76(16) above ₹1,00,000 of foreign tax and a new
+  Form No. 45 for a later refund); and `revised_return_deadline` moved to **section 263(5)**
+  as substituted by section 66(b) of the Finance Act, 2026, twelve months from the end of
+  the tax year, with the section 428(b) fee now measured from the end of the *tax* year — so
+  the fee window that section 234-I left unreachable under the 1961 Act is reachable, at
+  31 December 2027.
+
+- **An auditable old → new mapping.** Every entry in the new registry carries an
+  `act_transition` block naming the AY 2026-27 entry it descends from, the old provision, the
+  new provision and one of four classifications: `renumbered_only`,
+  `renumbered_and_substantive`, `unchanged_separate_legislation` or `new_entry`.
+  [`docs/ANNUAL-REVIEW.md`](docs/ANNUAL-REVIEW.md) renders it as a table. The headline moves:
+  s.49(2AA) → s.73(1) Table Sl. No. 4, s.17(2)(vi) → s.17(1)(d), s.48 → s.72(1)(a),
+  s.2(42A) → s.2(101), the fourth proviso to s.139(1) → s.263(1)(a)(ix) and 263(1)(b),
+  s.139(5) → s.263(5), s.139(8A) → s.263(6)(a), rule 115(2) → rule 206 (as a table, Sl.
+  Nos. 6 and 5, where the Rules of 1962 had sub-clauses (f) and (e)), rule 128(9) → rule 76,
+  and rule 115(1)'s TT-buying-rate definition → rule 207.
+
+  **The Black Money Act, 2015 is separate legislation and is not renumbered by any of this.**
+  Section 43 is still section 43, the penalty is still ₹10,00,000 and the relief threshold is
+  still ₹20,00,000. Every `s.43` citation in the tree was checked and left alone.
+
+- **Mutual fund entries in the registry**, cited to the Gazette text: grandfathering
+  (s.90(7) cutoff 1 February 2018, s.90(8)(b) valuation 31 January 2018, and the separate
+  listed and unlisted fair-value bases), Specified Mutual Funds (s.76(1), s.76(2)(a),
+  s.76(5)(b)), the equity-oriented thresholds (s.198(8), reaching short-term gains through
+  s.196(5)), holding periods (s.2(101)), LTCG at 12.5% over ₹1,25,000 (s.198(2)(a)), LTCG
+  otherwise at 12.5% (s.197(1)(b)), STCG at 20% (s.196(1)(i)), no indexation on units
+  (s.197(3) with s.72(8)), FIFO (s.67(7)(c)) and nil cost for bonus units (s.90(6)(d)).
+  **No code reads them.** They are research committed in a form a test can check.
+
+  Two of them carry a structured `implementation_trap` block, because both produce a
+  plausible wrong number rather than an error. **AMFI's 31 January 2018 NAV file has both a
+  *Net Asset Value* column and a *Repurchase Price* column and they differ on 4,756 of its
+  9,502 rows**; the statute requires net asset value, so reading the adjacent column
+  understates half of all grandfathered cost bases. And **section 76(1) applies
+  "Irrespective of anything contained in section 2(101)"**, so a Specified Mutual Fund unit
+  acquired on or after 1 April 2023 is short-term however long it was held — any pipeline
+  that computes holding days first and classifies second gets every one of them wrong, and a
+  single folio routinely holds lots on both sides of that date.
+  `tests/test_rules_registry.py` fails if either trap is deleted or hollowed out.
+
+- **[`docs/KNOWN-ISSUES.md`](docs/KNOWN-ISSUES.md)**, for things established and not solved.
+  Three at present: Schedule 112A's JSON schema carries `multipleOf: 0.0001` on five
+  per-unit fields, which this repository has never hit because Schedule FA has no such
+  constraint — tested with the repo's own `jsonschema` 4.26.0, `12.34` and `99.9999` both
+  fail and 27.9% of random legal four-decimal values fail, and passing a `Decimal` raises
+  `TypeError` inside the validator. Whether the Finance Act, 2026 amended the Specified
+  Mutual Fund definition **could not be established** — Part B of its Chapter III does not
+  amend section 76, but secondary commentary describes a 90-day carve-out that appears
+  nowhere in the Gazette text and the department's consolidated as-amended PDF returns 403 to
+  every automated client. And section 43 of the Black Money Act cures a default by reference
+  to sub-sections of **section 139 of the repealed 1961 Act**, while a tax year 2026-27
+  return is furnished under section 263 — unresolved, and material.
+
 - **A stated policy on what a language model may do with a real figure.** `AGENTS.md` now
   says it plainly: every arithmetic operation on real financial data happens in deterministic
   Python, and a model may locate and transcribe a figure but may never subtract, total or
@@ -102,6 +171,53 @@ notification changed it, because they may be filing an earlier year.
   builds one with `fx-update` and two `threshold` runs before the suites.
 
 ### Changed
+
+- **Audited every statutory citation in the tree against the change of Act, one at a time.**
+  No find-and-replace was used and none should be: the AY 2026-27 return was genuinely filed
+  under the Income-tax Act, 1961, and section 536(2)(c) of the Act of 2025 keeps that Act
+  applying to any tax year beginning before 1 April 2026. Renumbering the record of a filed
+  return would falsify it. So each citation was classified.
+
+  **Kept as 1961-Act, deliberately**, with an explicit note at the top of each file saying so
+  where a future reader might "fix" it: [`docs/RUNBOOK_AY2026-27.md`](docs/RUNBOOK_AY2026-27.md)
+  in full, [`docs/VERIFIED_FINDINGS.md`](docs/VERIFIED_FINDINGS.md) in full, the dated entries
+  in this changelog, the AY 2026-27 registry, and the README's prior-years and Form 67
+  passages. Two things in that material look like statutory citations and are not:
+  `Part A Gen_139(8A)` is a literal worksheet name inside the department's utility, and
+  "validation rule 746" is a rule in the department's validation-rules PDF, unrelated to the
+  Income-tax Rules. Both are called out so nobody renumbers them.
+
+  **Re-cited to the Act of 2025**, showing the 1961-Act number alongside wherever a reader
+  needs the bridge: the timeless statements in `itrprep/models.py`, `itrprep/adapters.py`,
+  `itrprep/positions.py`, `itrprep/rules.py` and `itrprep/host.py`, the runtime warnings the
+  adapters print, the README's data dictionary and FX-convention sections, `AGENTS.md`,
+  `CONTRIBUTING.md` and the test comments that describe the law rather than the fixture.
+
+- **`itrprep/emit.py` no longer hardcodes a repealed rule.** The other-schedules summary
+  ended with four fixed lines naming Form 67, rule 128(9) and sections 139(1), 139(4) and
+  139(8A). That text printed on every build for every year, so from AY 2027-28 it would have
+  been asserting repealed provisions in a forward-looking document. The paragraph is now
+  rendered from the registry for the year being built — Form 67 and rule 128(9) for
+  AY 2026-27, Form No. 44 and rule 76 for AY 2027-28 — and `itrprep/cli.py` passes the loaded
+  registry through. `rules/AY2026-27.json` gained two descriptive keys on
+  `form_67_deadline`, `form` and `rule`, naming the form and rule that entry was already
+  about; no figure changed and nothing was renumbered.
+
+- **The registry suite now exercises every registry, not just the newest** (167 checks →
+  579). This was a real gap rather than a tidiness one: the citation, review-class and
+  staleness blocks all ran against `rules.load()`, which returns the newest file, so adding
+  `rules/AY2027-28.json` would have silently retired `rules/AY2026-27.json` from the suite on
+  the day it appeared. Two new blocks were added as well. **Act transition** asserts that a
+  pre-2027 registry still cites the Income-tax Act, 1961 and a later one cites the Act of
+  2025, that every entry in the later registry records an `act_transition` with a known
+  classification, that no AY 2026-27 entry went missing across the change, and that the Black
+  Money Act entries are marked `unchanged_separate_legislation` rather than renumbered.
+  **Encoded traps** asserts both mutual fund traps are present, marked
+  `silent_wrong_answer`, and still name the specific facts that make them traps. The
+  annual-review checklist check now runs per registry and additionally requires the checklist
+  to explain the change of Act and cite section 536(2)(c). The **code reads the registry**
+  block gained checks that the other-schedules summary names the form, rule and deadline the
+  registry gives, and that a 2025-Act year's summary asserts no repealed provision.
 
 - **Settled the revised-return deadline, and corrected it.** `revised_return_deadline` was
   recorded as **31 December 2026** behind a `contested` flag, because our research memos

@@ -24,8 +24,10 @@ never appear in a filename, a log line or a model's context window.
 ## 2. Cite a primary source, or say you cannot
 
 Every statutory figure, date and convention this tool relies on is in
-[`rules/AY2026-27.json`](rules/AY2026-27.json) with a citation, and code reads it from there.
-Nothing is hardcoded at a call site.
+[`rules/AY<year>.json`](rules/) with a citation, and code reads it from there. Nothing is
+hardcoded at a call site. There is one registry per assessment year:
+[`AY2026-27.json`](rules/AY2026-27.json) under the Income-tax Act, 1961 and
+[`AY2027-28.json`](rules/AY2027-28.json) under the Income-tax Act, 2025.
 
 **Acceptable authority for a rate, a limit or a date:**
 
@@ -46,8 +48,19 @@ somewhere.
 **If you cannot verify something, say so in the pull request rather than committing it.** A
 gap that is flagged is useful; a confident wrong figure is worse than nothing, because
 somebody will file on it. The `contested` flag exists for genuinely unsettled points — the
-revised-return deadline carried it until the enacted Finance Act 2026 text settled it — and
-is the honest way to record a disagreement while it lasts.
+revised-return deadline carried it until the enacted Finance Act 2026 text settled it, and
+`specified_mf_debt_threshold_pct` carries it now — and is the honest way to record a
+disagreement while it lasts.
+
+### Which Act to cite
+
+The Income-tax Act, 2025 replaced the Income-tax Act, 1961 on 1 April 2026 and renumbered
+essentially everything, but s.536(2)(c) keeps the old Act applying to earlier tax years.
+**AY 2026-27 is permanently a 1961-Act year.** So do not renumber a citation without asking
+what it describes: content about the AY 2026-27 filing keeps its old-Act citations, and
+forward-looking content cites the Act of 2025. The Black Money Act, 2015 is separate
+legislation and is not renumbered at all. `AGENTS.md` has the full rule and
+`docs/ANNUAL-REVIEW.md` has the old → new mapping.
 
 ### Adding or changing a registry entry
 
@@ -61,9 +74,15 @@ is the honest way to record a disagreement while it lasts.
    source link and what specifically to re-check. The test fails if you forget.
 4. Read it through `itrprep/rules.py` at the point of use. Do not copy the value into a module.
 
-Scope for the registry is foreign asset disclosure and the schedules that depend on it.
-Slab rates, Chapter VI-A deductions and the section 112A grandfathering date do not belong
-here.
+Scope for the registry is foreign asset disclosure, the schedules that depend on it, and
+Indian mutual fund capital gains. Slab rates, surcharge tiers and Chapter VI-A deductions do
+not belong here.
+
+The mutual fund entries arrived with `rules/AY2027-28.json` and are cited research rather
+than a feature: no code reads them yet. Note that the grandfathering date this section used
+to name as out of scope — 31 January 2018, then under section 55(2)(ac) — is now **in**
+scope as section 90(7)–(8) of the Act of 2025, because it governs mutual fund units even
+though it never reached foreign shares.
 
 ## Scope
 

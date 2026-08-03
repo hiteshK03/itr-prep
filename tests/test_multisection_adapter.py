@@ -237,7 +237,7 @@ def test_sell_to_cover_is_both_legs() -> None:
     txns, _ = adapters.normalize(MULTI, "etrade", "etrade_stockplan")
     vest = one(txns, dt.date(2025, 6, 16), TXN_BUY)
     sale = one(txns, dt.date(2025, 6, 16), TXN_SELL)
-    check("the acquisition is the GROSS count, which s.17(2)(vi) charges on",
+    check("the acquisition is the GROSS count, which the perquisite is charged on",
           vest is not None and vest.quantity == Decimal(42))
     check("the disposal is the withheld count",
           sale is not None and sale.quantity == Decimal(13))

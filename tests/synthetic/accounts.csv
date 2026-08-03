@@ -1,0 +1,4 @@
+account_id,institution_name,institution_address,institution_zip,account_number,status,account_open_date,country_code,country_name
+etrade_stockplan,Morgan Stanley Smith Barney LLC (E*TRADE),"1585 Broadway, New York, New York",10036,SYNTH-ET-0001,OWNER,2022-07-01,2,UNITED STATES OF AMERICA
+fidelity_espp,Fidelity Brokerage Services LLC,"245 Summer Street, Boston, Massachusetts",02210,SYNTH-FD-0002,OWNER,2023-02-01,2,UNITED STATES OF AMERICA
+indmoney_us,DriveWealth LLC,"97 Newkirk Street, Jersey City, New Jersey",07306,SYNTH-IM-0003,OWNER,2023-05-01,2,UNITED STATES OF AMERICA

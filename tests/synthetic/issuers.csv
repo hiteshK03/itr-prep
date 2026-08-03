@@ -1,0 +1,5 @@
+ticker,entity_name,entity_address,entity_zip,entity_nature,country_code,country_name
+CSCO,"Cisco Systems, Inc.","170 West Tasman Drive, San Jose, California",95134,Listed Company,2,UNITED STATES OF AMERICA
+JNJ,Johnson & Johnson,"One Johnson & Johnson Plaza, New Brunswick, New Jersey",08933,Listed Company,2,UNITED STATES OF AMERICA
+IVV,iShares Core S&P 500 ETF,"400 Howard Street, San Francisco, California",94105,Exchange Traded Fund,2,UNITED STATES OF AMERICA
+AVGO,Broadcom Inc.,"3421 Hillview Avenue, Palo Alto, California",94304,Listed Company,2,UNITED STATES OF AMERICA

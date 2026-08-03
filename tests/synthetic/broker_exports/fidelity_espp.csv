@@ -1,0 +1,14 @@
+Fidelity NetBenefits - Stock Plan Transaction History
+Account: EMPLOYEE STOCK PURCHASE PLAN
+Generated: 01/15/2026
+
+Run Date,Symbol,Transaction Description,Offering Period,Shares Purchased,Purchase Value per Share,Principal Amount,Tax Withheld
+06/30/2023,JNJ,ESPP Shares Purchased,2023-H1,18,140.69,"$2,532.42",
+12/29/2023,JNJ,ESPP Shares Purchased,2023-H2,15,133.23,"$1,998.45",
+06/28/2024,JNJ,ESPP Shares Purchased,2024-H1,14,124.24,"$1,739.36",
+12/31/2024,JNJ,ESPP Shares Purchased,2024-H2,12,122.93,"$1,475.16",
+03/13/2025,JNJ,Dividend Received,,0,0,$73.16,$18.29
+06/12/2025,JNJ,Dividend Received,,0,0,$76.70,$19.18
+09/11/2025,JNJ,Dividend Received,,0,0,$76.70,$19.18
+12/11/2025,JNJ,Dividend Received,,0,0,$76.70,$19.18
+Total,,,,59,,"$7,745.39",

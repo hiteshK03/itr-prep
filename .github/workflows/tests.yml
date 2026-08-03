@@ -1,0 +1,130 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # The rules registry goes stale by the calendar rather than by anyone touching the code, so
+  # something has to notice when nobody is pushing. First of the month, 06:00 UTC.
+  schedule:
+    - cron: "0 6 1 * *"
+
+permissions:
+  contents: read
+
+jobs:
+  suites:
+    name: suites (${{ matrix.os }}, py${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python: ["3.10", "3.11", "3.12", "3.13"]
+        include:
+          # Everything except `itr-prep import` is plain Python, and this is where that
+          # claim is checked rather than asserted. macOS is the case that matters: it is
+          # the platform with no route to the department's Excel utility, so it is the
+          # one where the boundary has to hold. There is deliberately no Windows job --
+          # the only thing it could add is the import step, and that needs Excel and a
+          # copy of the utility, neither of which belongs in CI.
+          - os: macos-latest
+            python: "3.12"
+          - os: macos-latest
+            python: "3.13"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          # The unlock extras, so the credential suite runs its encrypted round-trips here
+          # rather than skipping them. That suite is the proof a password cannot leak, and
+          # a proof that skips in CI is not one.
+          python -m pip install -r requirements-unlock.txt
+
+      - name: Warm the offline caches
+        # The suites run offline, but "offline" means "reads a cache", and a fresh
+        # checkout has none: data/ is gitignored because it is derived, and because a
+        # real user's cached tickers say what they hold. So build it here. `fx-update`
+        # fetches the SBI TT-buy series; the two threshold runs walk every ticker-year
+        # the fixtures touch, which is what the suites then read with --offline.
+        run: |
+          python -m itrprep.cli fx-update
+          python -m itrprep.cli threshold --work tests/synthetic --years 2022-2025 \
+            --out "$RUNNER_TEMP/warm-synthetic.txt"
+          python -m itrprep.cli threshold --work tests/synthetic_split --years 2022-2025 \
+            --split-basis current --out "$RUNNER_TEMP/warm-split.txt"
+
+      - name: Suites
+        # Plain scripts, no runner. Each collects its failures and exits non-zero, so a
+        # single failure fails the job and names every check that went wrong.
+        run: |
+          status=0
+          ran=0
+          for t in tests/test_*.py; do
+            echo "::group::$t"
+            python "$t" || status=1
+            ran=$((ran + 1))
+            echo "::endgroup::"
+          done
+          # A suite that is absent from the checkout passes vacuously, which is how
+          # test_unlock_credentials.py went missing for a while: it matched a
+          # `*_credentials*` line in .gitignore and was never committed. Count them.
+          if [ "$ran" -ne 8 ]; then
+            echo "::error::expected 8 suites, ran $ran -- one is missing from the checkout"
+            exit 1
+          fi
+          exit $status
+
+      - name: No real data in the tree
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        # Cheap, and it guards the one mistake in this repository that a later commit cannot
+        # undo. A committed .env or a real PAN is published the moment it is pushed.
+        #
+        # The allowlist is the three placeholders the docs and fixtures use. Anything else
+        # PAN-shaped fails, which is the right default: a contributor pasting their own PAN
+        # into an example is a far likelier accident than a false positive.
+        run: |
+          if git ls-files | grep -qxF '.env'; then
+            echo "::error::.env is tracked. It holds document passwords."
+            exit 1
+          fi
+          hits=$(git grep -nIE '\b[A-Z]{5}[0-9]{4}[A-Z]\b' \
+                 | grep -vE 'AAAAA9999A|ABCDE1234F|ZZZZZ0000Z' || true)
+          if [ -n "$hits" ]; then
+            echo "::error::a PAN-shaped string that is not a known placeholder is committed:"
+            echo "$hits"
+            exit 1
+          fi
+
+  sources:
+    name: cited sources still resolve
+    runs-on: ubuntu-latest
+    # Network-dependent, so it must not be able to fail a pull request. It exists to notice
+    # when the department moves a page, which is a maintenance signal and not a defect.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: HEAD every URL in the rules registry
+        env:
+          ITRPREP_CHECK_SOURCE_URLS: "1"
+        run: python tests/test_rules_registry.py
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install ruff
+      - run: ruff check .

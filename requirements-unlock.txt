@@ -1,0 +1,11 @@
+# Optional, for `itr-prep unlock` only. The base tool needs two packages; opening
+# password-protected statements needs two more, so they are kept out of requirements.txt
+# and installed only if you have encrypted documents to read.
+#
+#   .venv/bin/python -m pip install -r requirements-unlock.txt
+#
+# pypdf handles encrypted PDFs (Form 16, CAS, AIS and 26AS downloads).
+pypdf>=4.0.0
+# msoffcrypto-tool handles password-protected Excel workbooks, which is how a few brokers
+# and most Indian payroll portals ship a statement.
+msoffcrypto-tool>=5.1.0

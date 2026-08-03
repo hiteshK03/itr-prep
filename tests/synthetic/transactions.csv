@@ -1,0 +1,25 @@
+account_id,ticker,txn_type,date,quantity,price_usd,amount_usd,tax_withheld_usd,acq_kind,lot_id,notes
+etrade_stockplan,CSCO,BUY,2024-08-15,50,48.53,2426.50,,RSU_VEST,CSCO-V-2024Q3,prior-year vest still held into 2025 (spans 1 Jan boundary)
+etrade_stockplan,CSCO,BUY,2025-02-15,40,64.87,2594.80,,RSU_VEST,CSCO-V-2025Q1,multiple lots per ticker
+etrade_stockplan,CSCO,BUY,2025-05-15,35,64.26,2249.10,,RSU_VEST,CSCO-V-2025Q2,multiple lots per ticker
+etrade_stockplan,CSCO,BUY,2025-06-30,22,58.97,1297.34,,ESPP,CSCO-ESPP-2025H1,"ESPP purchase in same account - price is 15% under the close, which is legitimate"
+etrade_stockplan,CSCO,BUY,2025-08-15,30,66.20,1986.00,,RSU_VEST,CSCO-V-2025Q3,multiple lots per ticker
+etrade_stockplan,CSCO,SELL,2025-09-10,40,68.13,2725.20,,,CSCO-V-2025Q1,mid-year sell of an identified lot (fully exits that lot)
+etrade_stockplan,CSCO,SELL,2025-11-20,25,75.44,1886.00,,,,mid-year sell with no lot_id - must go FIFO across remaining lots
+fidelity_espp,JNJ,BUY,2023-06-30,18,140.69,2532.42,,ESPP,JNJ-ESPP-2023H1,acquired 2023 never sold - held all of 2025
+fidelity_espp,JNJ,BUY,2023-12-29,15,133.23,1998.45,,ESPP,JNJ-ESPP-2023H2,acquired 2023 never sold - held all of 2025
+fidelity_espp,JNJ,BUY,2024-06-28,14,124.24,1739.36,,ESPP,JNJ-ESPP-2024H1,acquired 2024 never sold - held all of 2025
+fidelity_espp,JNJ,BUY,2024-12-31,12,122.93,1475.16,,ESPP,JNJ-ESPP-2024H2,acquired 2024 never sold - held all of 2025
+fidelity_espp,JNJ,DIVIDEND,2025-03-13,,,73.16,18.29,,,dividend split across four JNJ lots pro-rata
+fidelity_espp,JNJ,DIVIDEND,2025-06-12,,,76.70,19.18,,,
+fidelity_espp,JNJ,DIVIDEND,2025-09-11,,,76.70,19.18,,,
+fidelity_espp,JNJ,DIVIDEND,2025-12-11,,,76.70,19.18,,,
+indmoney_us,IVV,BUY,2023-05-22,30,420.56,12616.80,,OPEN_MARKET,IVV-2023-A,held across whole of 2025; >24m at sale = LTCG
+indmoney_us,IVV,BUY,2025-01-08,12,592.19,7106.28,,OPEN_MARKET,IVV-2025-A,bought early in reporting year
+indmoney_us,AVGO,BUY,2025-03-05,60,191.58,11494.80,,OPEN_MARKET,AVGO-2025-A,bought AND fully exited within the reporting year
+indmoney_us,IVV,DIVIDEND,2025-03-27,,,68.04,17.01,,,quarterly ETF dividend with US withholding
+indmoney_us,IVV,DIVIDEND,2025-06-27,,,71.82,17.96,,,
+indmoney_us,AVGO,SELL,2025-08-22,60,294.00,17640.00,,,AVGO-2025-A,full exit - closing balance must be nil
+indmoney_us,IVV,DIVIDEND,2025-09-26,,,75.18,18.80,,,
+indmoney_us,IVV,SELL,2025-10-15,20,668.28,13365.60,,,IVV-2023-A,sale of a >24-month lot - should land in LTCG
+indmoney_us,IVV,DIVIDEND,2025-12-23,,,41.36,10.34,,,

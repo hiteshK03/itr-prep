@@ -1,0 +1,11 @@
+# Runtime dependencies for itr-prep. Pinned to the versions this was developed and tested
+# against (Python 3.12, Ubuntu under WSL2), 2026-07.
+#
+# Deliberately tiny: only two runtime deps. Notably NOT used:
+#   - yfinance  -> its bundled curl_cffi CA bundle failed to verify during development, so
+#                  every request died with CertificateVerifyError. Prices are fetched from
+#                  Yahoo's public chart endpoint with plain requests instead.
+#   - pandas    -> the stdlib csv module is enough here and is one less thing to break.
+#   - itr-schedule-fa -> see README "Supply chain" section. Not a dependency.
+requests==2.34.2
+jsonschema==4.26.0

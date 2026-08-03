@@ -1,0 +1,13 @@
+Morgan Stanley StockPlan Connect
+Benefit History Export
+Generated: 07/28/2026
+
+Symbol,Transaction Type,Vest Date,Quantity,Vest Date FMV,Total Value,Grant Number
+CSCO,Restricted Stock Release,08/15/2024,50,$48.53,"$2,426.50",GRANT-2022-11
+CSCO,Restricted Stock Release,02/15/2025,40,$64.87,"$2,594.80",GRANT-2023-08
+CSCO,Restricted Stock Release,05/15/2025,35,$64.26,"$2,249.10",GRANT-2023-08
+CSCO,ESPP Purchase,06/30/2025,22,$58.97,"$1,297.34",ESPP-2025-H1
+CSCO,Restricted Stock Release,08/15/2025,30,$66.20,"$1,986.00",GRANT-2024-08
+CSCO,Sale,09/10/2025,40,$68.13,"$2,725.20",GRANT-2023-08
+CSCO,Sale,11/20/2025,25,$75.44,"$1,886.00",GRANT-2022-11
+Total,,,242,,"$15,164.94",

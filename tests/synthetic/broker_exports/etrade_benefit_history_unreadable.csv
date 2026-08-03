@@ -1,0 +1,8 @@
+Morgan Stanley StockPlan Connect
+Benefit History Export
+
+Symbol,Transaction Type,Vest Date,Quantity,Vest Date FMV,Total Value,Grant Number
+CSCO,Restricted Stock Release,04/15/2025,20,$61.40,"$1,228.00",GRANT-2023-08
+CSCO,Corporate Action Adjustment,05/15/2025,5,$64.26,$321.30,GRANT-2023-08
+GRANT-2024-08,Restricted Stock,Unvested,100,$0.00,$0.00,2024-08-15
+Total,,,25,,"$1,549.30",

@@ -1,0 +1,240 @@
+{
+  "_schema": "itrprep-rules/1",
+  "_purpose": "Every statutory figure, date and convention this tool relies on, for ONE assessment year, each one cited to an official source. Code reads values from here and never from memory. A value that is not in this file, with a source, is a value the tool has no business asserting.",
+  "_source_policy": "Primary sources only, in this order: the Income-tax Act or the Finance Act text, a CBDT notification or circular, then incometaxindia.gov.in or incometax.gov.in. Secondary aggregators -- ClearTax, Taxmann, TaxGuru, practitioner blogs -- may be used to FIND a provision and may be quoted in prose, but must never be the cited authority for a rate, a limit or a date. tests/test_rules_registry.py enforces the domain rule.",
+  "_review_classes": "stable = fixed by statute and not expected to move; a historical date or a settled convention. annual = set or revised by a Finance Act, or otherwise dependent on the assessment year. Every 'annual' entry must be re-verified before this registry is used for a later assessment year -- see docs/ANNUAL-REVIEW.md.",
+
+  "assessment_year": "2026-27",
+  "financial_year": "2025-26",
+  "schedule_fa_calendar_year": 2025,
+  "verified_on": "2026-08-03",
+
+  "entries": {
+    "schedule_fa_reporting_basis": {
+      "value": "calendar_year",
+      "review": "stable",
+      "applies_to": "all",
+      "verified_on": "2026-08-03",
+      "statute": "Schedule FA of ITR-2 reports foreign assets held at any time during the calendar year ending 31 December that falls within the previous year. Every other schedule in the return runs on the financial year.",
+      "check": "Nothing to check annually. The basis has been the calendar year since Schedule FA was aligned to CRS/FATCA reporting periods.",
+      "sources": [
+        {
+          "authority": "Income Tax Department, Step by Step Guide to Fill Schedules FSI, TR and FA",
+          "url": "https://www.incometax.gov.in/iec/foportal/sites/default/files/2026-03/Step%20by%20Step%20Guide%20FA%20FSI.pdf"
+        },
+        {
+          "authority": "Income Tax Department, ITR-2 instructions and utilities for the assessment year",
+          "url": "https://www.incometax.gov.in/iec/foportal/downloads/income-tax-returns"
+        }
+      ]
+    },
+
+    "schedule_fa_reporting_period": {
+      "value": {"start": "2025-01-01", "end": "2025-12-31"},
+      "review": "annual",
+      "applies_to": "2026-27",
+      "verified_on": "2026-08-03",
+      "statute": "The calendar year ending 31 December falling within previous year 2025-26.",
+      "check": "Confirm the calendar year the assessment year's ITR-2 instructions name for Schedule FA. It advances by one year with the assessment year, but confirm rather than assume -- this is the single most consequential date in the tool.",
+      "sources": [
+        {
+          "authority": "Income Tax Department, Step by Step Guide to Fill Schedules FSI, TR and FA",
+          "url": "https://www.incometax.gov.in/iec/foportal/sites/default/files/2026-03/Step%20by%20Step%20Guide%20FA%20FSI.pdf"
+        },
+        {
+          "authority": "Income Tax Department, ITR-2 instructions and utilities for the assessment year",
+          "url": "https://www.incometax.gov.in/iec/foportal/downloads/income-tax-returns"
+        }
+      ]
+    },
+
+    "schedule_fa_fx_convention": {
+      "value": "sbi_tt_buying_rate_on_the_relevant_date",
+      "review": "stable",
+      "applies_to": "all",
+      "verified_on": "2026-08-03",
+      "statute": "The department's own guide fixes each Schedule FA amount to the SBI telegraphic transfer buying rate as on the date that amount relates to -- the investment date, the peak date, 31 December, each dividend date, each sale date.",
+      "check": "Nothing to check annually. Re-read the guide only if the department reissues it.",
+      "sources": [
+        {
+          "authority": "Income Tax Department, Step by Step Guide to Fill Schedules FSI, TR and FA",
+          "url": "https://www.incometax.gov.in/iec/foportal/sites/default/files/2026-03/Step%20by%20Step%20Guide%20FA%20FSI.pdf"
+        }
+      ]
+    },
+
+    "income_fx_convention_rule_115": {
+      "value": "last_day_of_the_month_immediately_preceding",
+      "review": "stable",
+      "applies_to": "all",
+      "verified_on": "2026-08-03",
+      "statute": "Rule 115(2) of the Income-tax Rules, 1962: the specified date for capital gains is sub-clause (f) and for dividend income sub-clause (e), both being the last day of the month immediately preceding the month of transfer or of payment. This is NOT the convention Schedule FA uses.",
+      "check": "Nothing to check annually. Rule 115 has been stable; re-read only if the Rules are amended.",
+      "sources": [
+        {
+          "authority": "Income-tax Rules, 1962, rule 115",
+          "url": "https://incometaxindia.gov.in/pages/rules/income-tax-rules-1962.aspx"
+        }
+      ]
+    },
+
+    "equity_perquisite_cost_of_acquisition": {
+      "value": "fair_market_value_charged_to_perquisite",
+      "review": "stable",
+      "applies_to": "all",
+      "verified_on": "2026-08-03",
+      "statute": "Section 17(2)(vi) charges the RSU or ESPP benefit as a perquisite on the fair market value at vest or purchase; section 49(2AA) therefore makes that same fair market value the cost of acquisition, not the discounted price actually paid.",
+      "check": "Nothing to check annually.",
+      "sources": [
+        {
+          "authority": "Income-tax Act, 1961, sections 17(2)(vi) and 49(2AA)",
+          "url": "https://incometaxindia.gov.in/pages/acts/income-tax-act.aspx"
+        }
+      ]
+    },
+
+    "transfer_expenditure_deductible": {
+      "value": true,
+      "review": "stable",
+      "applies_to": "all",
+      "verified_on": "2026-08-03",
+      "statute": "Section 48: expenditure incurred wholly and exclusively in connection with the transfer is deductible, which is what makes brokerage and commission part of the computation rather than a note.",
+      "check": "Nothing to check annually.",
+      "sources": [
+        {
+          "authority": "Income-tax Act, 1961, section 48",
+          "url": "https://incometaxindia.gov.in/pages/acts/income-tax-act.aspx"
+        }
+      ]
+    },
+
+    "schedule_fa_disclosure_unconditional": {
+      "value": true,
+      "review": "stable",
+      "applies_to": "all",
+      "verified_on": "2026-08-03",
+      "statute": "Schedule FA must be filled by a resident and ordinarily resident taxpayer holding any foreign asset at any time during the reporting period, whatever it is worth. There is no de minimis. The Rs 20,00,000 figure elsewhere in this registry relieves a PENALTY; it is not a reporting threshold, and reading it as one is the most expensive mistake available here.",
+      "check": "Nothing to check annually, but re-read the assessment year's Schedule FA instructions for any newly introduced threshold before relying on this.",
+      "sources": [
+        {
+          "authority": "Income Tax Department, Step by Step Guide to Fill Schedules FSI, TR and FA",
+          "url": "https://www.incometax.gov.in/iec/foportal/sites/default/files/2026-03/Step%20by%20Step%20Guide%20FA%20FSI.pdf"
+        },
+        {
+          "authority": "CBDT, FAQs on Budget 2026 (the Rs 20 lakh figure as penalty relief)",
+          "url": "https://www.incometaxindia.gov.in/documents/20117/15766092/FAQs-Budget-2026.pdf"
+        }
+      ]
+    },
+
+    "foreign_share_long_term_holding": {
+      "value": {"months": 24, "days": 730},
+      "review": "annual",
+      "applies_to": "2026-27",
+      "verified_on": "2026-08-03",
+      "statute": "Section 2(42A): a foreign company's shares are unlisted for Indian purposes, so the long-term threshold is 24 months rather than 12. Used only for the Schedule CG short/long split, never for Schedule FA. The statute states months; the comparison is made in days, so both are recorded here and cannot drift apart in code.",
+      "check": "Holding periods were rewritten by the Finance (No. 2) Act 2024 with effect from 23 July 2024. Re-read section 2(42A) as amended by the assessment year's Finance Act and confirm unlisted shares are still at 24 months.",
+      "sources": [
+        {
+          "authority": "Income-tax Act, 1961, section 2(42A)",
+          "url": "https://incometaxindia.gov.in/pages/acts/income-tax-act.aspx"
+        }
+      ]
+    },
+
+    "black_money_s43_penalty_inr": {
+      "value": 1000000,
+      "unit": "INR",
+      "review": "annual",
+      "applies_to": "2026-27",
+      "verified_on": "2026-08-03",
+      "statute": "Section 43 of the Black Money (Undisclosed Foreign Income and Assets) and Imposition of Tax Act, 2015: a flat penalty per assessment year for failing to disclose a foreign asset, unrelated to the asset's value or to any tax shortfall.",
+      "check": "Confirm the figure in section 43 is still Rs 10,00,000. Also confirm whether the assessment year's Finance Act has changed the list of sub-sections of section 139 whose filing cures the default -- a revised return under section 139(5) is in that list and an updated return under section 139(8A) is not, which is the point the whole prior-year workflow turns on.",
+      "sources": [
+        {
+          "authority": "Black Money (Undisclosed Foreign Income and Assets) and Imposition of Tax Act, 2015, section 43",
+          "url": "https://incometaxindia.gov.in/Pages/acts/index.aspx"
+        },
+        {
+          "authority": "CBDT, FAQs on Budget 2026",
+          "url": "https://www.incometaxindia.gov.in/documents/20117/15766092/FAQs-Budget-2026.pdf"
+        }
+      ]
+    },
+
+    "black_money_relief_threshold_inr": {
+      "value": 2000000,
+      "unit": "INR",
+      "review": "annual",
+      "applies_to": "2026-27",
+      "verified_on": "2026-08-03",
+      "statute": "The proviso to section 43 of the Black Money Act, inserted by the Finance (No. 2) Act 2024 with effect from 1 October 2024, disapplies the penalty where the aggregate value of the foreign assets other than immovable property does not exceed this figure. It replaced an earlier Rs 5,00,000 bank-balance carve-out, so it has moved once already.",
+      "check": "Confirm the figure, and confirm immovable property is still excluded from the relief. The Finance Act 2026 inserted matching provisos into sections 49 and 50 (prosecution) without disturbing this one, so watch for further movement. The proviso still fixes no valuation date for shares, which is why the threshold report shows two bases.",
+      "sources": [
+        {
+          "authority": "CBDT, FAQs on Budget 2026",
+          "url": "https://www.incometaxindia.gov.in/documents/20117/15766092/FAQs-Budget-2026.pdf"
+        },
+        {
+          "authority": "Black Money (Undisclosed Foreign Income and Assets) and Imposition of Tax Act, 2015, section 43 proviso",
+          "url": "https://incometaxindia.gov.in/Pages/acts/index.aspx"
+        }
+      ]
+    },
+
+    "form_67_deadline": {
+      "value": {
+        "basis": "end_of_the_assessment_year",
+        "date": "2027-03-31",
+        "conditional_on": "the return for the assessment year being furnished within the time specified under section 139(1) or section 139(4)",
+        "updated_return_basis": "on or before the date the section 139(8A) return is furnished"
+      },
+      "review": "annual",
+      "applies_to": "2026-27",
+      "verified_on": "2026-08-03",
+      "statute": "Rule 128(9) of the Income-tax Rules, 1962, as substituted by CBDT Notification No. 100/2022 dated 18 August 2022 (Income-tax (27th Amendment) Rules, 2022, G.S.R. 636(E)) with retrospective effect from 1 April 2022. The proviso to that sub-rule fixes the updated-return case: where the return is furnished under section 139(8A), Form 67 for the income included in that updated return is due on or before the date the return is furnished, not by the end of the assessment year.",
+      "check": "The date advances with the assessment year, so re-derive it. The Form 44 question is now SETTLED, and the answer is that this entry does not survive past this assessment year. Form No. 67 under rule 128 of the Income-tax Rules, 1962 is succeeded by Form No. 44 under rule 76 of the Income-tax Rules, 2026 (CBDT Notification No. 22/2026, G.S.R. 198(E), 20 March 2026), in force from 1 April 2026 and applying to tax year 2026-27 onwards -- income earned from 1 April 2026, which is what the old nomenclature called AY 2027-28. AY 2026-27 is the last year on Form 67, because income of FY 2025-26 remains under the Income-tax Act, 1961. The deadline structure carries over unchanged: rule 76(12) gives twelve months from the end of the tax year where the return is within the section 263(1) or 263(4) window, and rule 76(13) repeats the updated-return proviso for a return under section 263(6)(a). What does change is substantive, so a successor registry must rename this entry rather than re-date it: rule 76(16) requires an accountant to verify Form 44 where the assessee is a company or where foreign tax paid for the tax year is Rs 1,00,000 or more, the form asks for the foreign tax identification number, and a new Form No. 45 intimates a later refund of foreign tax.",
+      "sources": [
+        {
+          "authority": "Income-tax Rules, 1962, rule 128(9)",
+          "url": "https://incometaxindia.gov.in/pages/rules/income-tax-rules-1962.aspx"
+        },
+        {
+          "authority": "CBDT Notification No. 100/2022 dated 18 August 2022, in the department's notification index",
+          "url": "https://incometaxindia.gov.in/pages/communications/notifications.aspx"
+        },
+        {
+          "authority": "CBDT Notification No. 22/2026, G.S.R. 198(E), 20 March 2026 -- Income-tax Rules, 2026, rule 76 and Form No. 44 (the successor to rule 128 and Form No. 67)",
+          "url": "https://www.incometax.gov.in/iec/foportal/sites/default/files/2026-03/En-Notified-IT-Rules-2026-20-03-2026.pdf"
+        }
+      ]
+    },
+
+    "revised_return_deadline": {
+      "value": {"date": "2027-03-31", "section": "139(5)"},
+      "review": "annual",
+      "applies_to": "2026-27",
+      "verified_on": "2026-08-03",
+      "statute": "Section 139(5) of the Income-tax Act, 1961 as substituted by section 5(b) of the Finance Act, 2026 (No. 4 of 2026) with effect from 1 March 2026: a revised return may be furnished 'at any time before the end of the relevant assessment year or before the completion of the assessment, whichever is earlier'. For AY 2026-27 that is 31 March 2027 -- three months later than the 31 December the pre-substitution wording ('three months prior to the end of the relevant assessment year') produced. This matters here because a revised return is in the list of provisions in section 43 of the Black Money Act whose filing cures a Schedule FA omission, while an updated return under section 139(8A) is not, so revision is the only self-help cure for the current year's schedule -- and that cure now runs three months longer. Section 16 of the same Finance Act inserts section 234-I, a fee of Rs 1,000 where total income does not exceed Rs 5,00,000 and Rs 5,000 otherwise, on a revised return furnished after the nine-month point.",
+      "check": "SETTLED on 3 August 2026 against the enacted Finance Act text, and the 'contested' flag removed. The two memos reading the Finance Act 2026 substitution were right and the memo reading the historic three-month rule was wrong. Two things to re-check for a later year. First, the date is the end of the assessment year and moves with it, so re-derive rather than copy; note also the second limb, completion of the assessment, which can close the window earlier. Second, read section 234-I as it then stands: as enacted it measures nine and twelve months from the end of the ASSESSMENT year, whereas the Notes on Clauses to the Finance Bill say 'previous year' and the Income-tax Act 2025 counterpart (section 428(b)) says tax year. Read literally, the enacted fee window opens only after section 139(5) has already closed and can never be reached, so a corrigendum is likely and the fee should be budgeted for even though the text does not presently bite.",
+      "sources": [
+        {
+          "authority": "Finance Act, 2026 (No. 4 of 2026), section 5(b) substituting section 139(5), and section 16 inserting section 234-I -- Gazette of India Extraordinary, Part II Section 1, 30 March 2026",
+          "url": "https://egazette.gov.in/WriteReadData/2026/271439.pdf"
+        },
+        {
+          "authority": "Memorandum explaining the provisions of the Finance Bill, 2026 -- 'Extending the period of filing revised return', which states the amendment applies for assessment year 2026-27",
+          "url": "https://www.indiabudget.gov.in/doc/memo.pdf"
+        },
+        {
+          "authority": "Finance Bill, 2026, Notes on Clauses -- clause 5 (section 139) and clause 12 (section 234-I)",
+          "url": "https://www.indiabudget.gov.in/doc/Finance_Bill.pdf"
+        },
+        {
+          "authority": "Income-tax Act, 1961, section 139(5)",
+          "url": "https://incometaxindia.gov.in/pages/acts/income-tax-act.aspx"
+        }
+      ]
+    }
+  }
+}

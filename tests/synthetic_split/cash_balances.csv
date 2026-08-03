@@ -1,0 +1,4 @@
+account_id,year,peak_usd,peak_date,closing_usd,notes
+indmoney_us,2023,120.00,2023-11-16,4.50,cash left over after the AVGO purchase
+indmoney_us,2024,500.00,2024-09-30,118.75,dividends received but not reinvested
+indmoney_us,2025,640.00,,205.30,peak_date deliberately blank - converted at the 31 Dec rate

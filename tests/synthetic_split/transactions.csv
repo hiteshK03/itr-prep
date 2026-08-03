@@ -1,0 +1,4 @@
+account_id,ticker,txn_type,date,quantity,price_usd,amount_usd,tax_withheld_usd,acq_kind,lot_id,notes
+indmoney_us,AVGO,BUY,2023-11-15,10,975.40,9754.00,,OPEN_MARKET,AVGO-2023-A,PRE-SPLIT quantity and price as printed on the 2023 statement; spans the 10-for-1 split of 2024-07-15
+indmoney_us,AVGO,DIVIDEND,2024-06-28,,,52.50,13.13,,,pre-split dividend: 10 shares
+indmoney_us,AVGO,DIVIDEND,2024-09-30,,,53.00,13.25,,,post-split dividend: 100 shares

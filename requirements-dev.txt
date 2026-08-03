@@ -1,0 +1,9 @@
+-r requirements.txt
+
+# Verification-only tooling. Not needed to run the pipeline; used to recover the
+# utility's VBA source and read the ITD PDFs while establishing the JSON contract.
+oletools==0.60.2
+pdfminer.six==20250506
+
+# Lint. Configured in pyproject.toml, and the same command CI runs: `ruff check .`
+ruff>=0.6

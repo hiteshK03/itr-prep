@@ -1,0 +1,103 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "itr-prep"
+version = "1.0.0"
+description = "Schedule FA for India's ITR-2, computed from US broker exports"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+keywords = ["india", "income-tax", "itr-2", "schedule-fa", "foreign-assets", "rsu", "espp"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: End Users/Desktop",
+  "License :: OSI Approved :: MIT License",
+  "Natural Language :: English",
+  # The pipeline runs anywhere. Only `itr-prep import`, which drives the department's .xlsm,
+  # needs a reachable Windows Excel -- see itrprep/host.py and the README's "Where this runs".
+  "Operating System :: MacOS",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Office/Business :: Financial :: Accounting",
+]
+
+# Deliberately two. See the README's Supply chain section for what was rejected and why.
+dependencies = [
+  "requests>=2.31",
+  "jsonschema>=4.20",
+]
+
+[project.optional-dependencies]
+# Only needed to open password-protected statements. `itr-prep unlock` says exactly what to
+# install if they are absent, and nothing else in the pipeline touches them.
+unlock = [
+  "pypdf>=4.0.0",
+  "msoffcrypto-tool>=5.1.0",
+]
+# Used to decompile the utility's VBA and read the ITD's PDFs while establishing the JSON
+# contract. Not needed to run anything.
+dev = [
+  "oletools>=0.60",
+  "pdfminer.six>=20221105",
+]
+
+[project.scripts]
+itr-prep = "itrprep.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/hiteshK03/itr-prep"
+Changelog = "https://github.com/hiteshK03/itr-prep/blob/main/CHANGELOG.md"
+Security = "https://github.com/hiteshK03/itr-prep/blob/main/SECURITY.md"
+
+[tool.setuptools]
+packages = ["itrprep"]
+
+# This is a clone-and-run tool, and an editable install is the supported way to get the
+# `itr-prep` command on PATH:
+#
+#     .venv/bin/python -m pip install -e .
+#
+# A non-editable install is deliberately not claimed to work. The tool resolves the rules
+# registry, the ITD schema and the FX cache relative to the repository root, and a registry
+# that is not present is a hard error rather than something to paper over -- see
+# itrprep/rules.py. Publishing to PyPI would mean rethinking that, and the README's Supply
+# chain section explains why a same-niche package on PyPI is not obviously a good thing.
+
+[tool.ruff]
+# The prose in this codebase is load-bearing -- the docstrings explain statutory traps, and
+# breaking them to fit 79 columns makes them worse. 96 is what the code already reads at.
+line-length = 96
+target-version = "py310"
+
+[tool.ruff.lint]
+# Chosen to catch mistakes, not to impose a style. Deliberately not enabled: PTH, because
+# this codebase uses os.path throughout and a mass rewrite to pathlib would be churn with
+# no reader benefit; ANN and D, because the docstrings here are essays about the law rather
+# than parameter tables.
+select = ["E", "F", "W", "I", "UP", "B", "C4"]
+ignore = [
+  # `l` as a lot variable reads perfectly well in a file about lots.
+  "E741",
+  # zip(strict=) would change nothing: every call site zips sequences already checked for
+  # equal length, and the default is strict=False anyway.
+  "B905",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Builds XLSX fixtures out of raw XML literals; wrapping them helps nobody.
+"tests/make_xlsx_fixture.py" = ["E501"]
+# The long lines are copy-pasteable commands and COM incantations that do not survive being
+# wrapped.
+"scripts/*" = ["E501"]
+# B023 flags three closures over a loop variable in the modal handler. The behaviour is
+# correct as written, because each is called within the iteration that binds it, and this
+# path can only be exercised on Windows with the utility installed -- so it is left alone
+# rather than refactored blind.
+"scripts/import_to_utility.py" = ["E501", "B023"]

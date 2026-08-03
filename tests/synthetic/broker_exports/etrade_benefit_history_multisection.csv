@@ -1,0 +1,23 @@
+Morgan Stanley StockPlan Connect
+Benefit History Export
+Generated: 07/30/2026
+
+Restricted Stock Units
+Symbol,Transaction Type,Vest Date,Quantity,Vest Date FMV,Total Value,Grant Number
+CSCO,Restricted Stock Release,04/15/2025,20,$61.40,"$1,228.00",GRANT-2023-08
+CSCO,Lapse,05/15/2025,18,$64.26,"$1,156.68",GRANT-2023-08
+Total,,,38,,"$2,384.68",
+
+Restricted Stock Units - Net Share Settlement
+Symbol,Transaction Type,Vest Date,Shares Issued,Tax Collection Shares,Net Shares,Vest Date FMV,Grant Number
+CSCO,Vest and Sell to Cover,06/16/2025,42,13,29,$124.12,GRANT-2024-08
+CSCO,Distribution,07/15/2025,25,8,17,$130.05,GRANT-2024-08
+
+Employee Stock Purchase Plan
+Purchase Date,Symbol,Plan Type,Sellable Quantity,Net Shares,FMV,Grant Number
+06/30/2025,CSCO,ESPP Purchase,0,22,$58.97,ESPP-2025-H1
+
+Share Deposits
+Settlement Date,Symbol,Activity,Shares Deposited,Market Value,Award Id
+08/15/2025,CSCO,Share Deposit,12,$66.20,DEP-2025-01
+Grand Total,,,,,,

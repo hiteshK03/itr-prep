@@ -192,10 +192,11 @@ extended the carve-outs; the Finance Act, 2026 amended section 2 only at clauses
 legislation, not renumbered by the Act of 2025.
 
 Confirm the figure in section 43 is still ₹10,00,000. Then re-read the cross-reference
-question above: section 43's cure lists sub-sections of section 139 of the **1961** Act, and
-a 2025-Act return is furnished under section 263. Watch for a Finance Act, an amendment Act
-or a CBDT circular resolving it — that is the single most useful thing that could change
-here.
+question above: section 43's charging limb names sub-sections (1), (4) and (5) of section 139
+of the **1961** Act, and a 2025-Act return is furnished under section 263. Watch for a Finance
+Act, an amendment Act or a CBDT circular resolving it — that is the single most useful thing
+that could change here. Note what is *not* open: section 139(8A) was never in that limb, so an
+updated return never displaced a section 43 default under either Act.
 
 - [Acts administered by the department, including the Black Money Act, 2015](https://incometaxindia.gov.in/Pages/acts/index.aspx)
 - [Finance Act, 2026, Part III, s.160](https://egazette.gov.in/WriteReadData/2026/271439.pdf) — everything it does to the Black Money Act, being provisos to ss.49 and 50 only

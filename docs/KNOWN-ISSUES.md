@@ -141,7 +141,7 @@ penalises.
 This is worth stating flatly because the transition invites the opposite mistake — reading
 the renumbering as an opportunity to revisit a question that was actually closed all along.
 
-### The half that is open: whether section 263(1), (4) and (5) read onto the list
+### The half that is open: whether section 263(1), (4) and (5) read onto the charging limb
 
 Probably yes, on section 8(1), which maps each of section 139(1), (4) and (5) onto the
 corresponding re-enacted provision in section 263. What stops that being more than "probably"

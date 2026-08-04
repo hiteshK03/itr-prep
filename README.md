@@ -1289,9 +1289,11 @@ Three things worth knowing without reading that table:
 
 - **The Black Money Act, 2015 is separate legislation and is not renumbered.** Section 43,
   the ₹10,00,000 penalty and the ₹20,00,000 relief threshold are untouched. There is a live
-  cross-reference problem, though: section 43's cure lists sub-sections of section 139 of the
-  *1961* Act, and a tax year 2026-27 return is furnished under section 263 of the Act of
-  2025. Whether that reads onto the list is unresolved — see
+  cross-reference problem, though: section 43's charging limb names sub-sections (1), (4) and
+  (5) of section 139 of the *1961* Act, and a tax year 2026-27 return is furnished under
+  section 263 of the Act of 2025. Whether those read onto section 263 is unresolved. What is
+  settled is the other half — section 139(8A) was never in that limb, so an updated return
+  never displaced a section 43 default and renumbering does not change that. See
   [`docs/KNOWN-ISSUES.md`](docs/KNOWN-ISSUES.md).
 - **Two entries changed in substance, not just number.** The foreign tax credit statement
   became Form No. 44 under rule 76 of the Income-tax Rules, 2026, with an accountant's

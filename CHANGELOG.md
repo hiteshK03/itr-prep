@@ -28,7 +28,8 @@ notification changed it, because they may be filing an earlier year.
   `form_67_deadline` became **`foreign_tax_credit_statement_deadline`** (Form No. 44 under
   rule 76 of the Rules of 2026, twelve months from the end of the tax year, with an
   accountant's verification under rule 76(16) above ₹1,00,000 of foreign tax and a new
-  Form No. 45 for a later refund); and `revised_return_deadline` moved to **section 263(5)**
+  Form No. 45 intimating the settlement of a dispute over foreign tax whose credit was not
+  claimed); and `revised_return_deadline` moved to **section 263(5)**
   as substituted by section 66(b) of the Finance Act, 2026, twelve months from the end of
   the tax year, with the section 428(b) fee now measured from the end of the *tax* year — so
   the fee window that section 234-I left unreachable under the 1961 Act is reachable, at
@@ -158,6 +159,17 @@ notification changed it, because they may be filing an earlier year.
 
 ### Fixed
 
+- **Corrected what Form No. 45 is for, in four places.** The registry, the README,
+  [`docs/ANNUAL-REVIEW.md`](docs/ANNUAL-REVIEW.md) and this changelog all described the new
+  Form No. 45 as the intimation for **a later refund of foreign tax**. It is not. Read against
+  the notified text, **rule 76(15) of the Income-tax Rules, 2026** requires Form No. 45 for the
+  purposes of **rule 76(6)** — the *settlement of a dispute* over foreign tax whose credit was
+  not claimed, due within six months from the end of the month in which the dispute is
+  settled, and verified by an accountant under rule 76(17) wherever that year's Form No. 44
+  needed one. The refund case is **rule 76(14)**, which keeps it on **Form No. 44** itself, in
+  its Part C. Anyone who had believed the old description would have gone looking for the
+  wrong form on a deadline that does not exist, and would have missed that a refund reopens a
+  form already filed rather than starting a new one.
 - **`tests/test_unlock_credentials.py` was never committed.** It matched the `*_credentials*`
   line in `.gitignore` written to keep credential files out of the repository, so the suite
   that proves a document password cannot escape existed only on the author's machine — and
@@ -171,6 +183,62 @@ notification changed it, because they may be filing an earlier year.
   builds one with `fx-update` and two `threshold` runs before the suites.
 
 ### Changed
+
+- **Narrowed the section 43 cross-reference question, and closed half of it.**
+  [`docs/KNOWN-ISSUES.md`](docs/KNOWN-ISSUES.md) issue 3 asked whether a return under section
+  263 of the Act of 2025 reads onto section 43 of the Black Money Act, whose text names
+  section 139 of the repealed 1961 Act. Two findings, both from the enacted text.
+
+  First, the framing was slightly wrong and the correction matters. Section 43 has no "list of
+  curing filings". The reference to section 139(1), (4) and (5) sits in the **charging limb** —
+  the section applies to a person "who **has furnished** the return of income for any previous
+  year under" those sub-sections and omitted the asset "in **such** return". It identifies
+  which return the omission is judged in. So nothing cures a section 43 default; a disclosure
+  in a return under those sub-sections means no default arose.
+
+  Second, that disposes of the updated return under **either** Act. Section 139(8A) was never
+  in the charging limb, so section 263(6)(a) has no reference to be construed onto, and
+  **section 8(1) of the General Clauses Act, 1897** — which construes a reference to a repealed
+  provision as a reference to the provision re-enacted in its place — cannot supply a reference
+  that was never made. An updated return did not displace a section 43 default before
+  1 April 2026 and does not displace one after. That limb is settled, and settled against the
+  taxpayer.
+
+  What stays open is whether section 263(1), (4) and (5) read onto the charging limb in place
+  of section 139(1), (4) and (5). Probably yes, on section 8(1) — but nothing makes it
+  explicit, and the search for an instrument that does was exhaustive: the Act of 2025 has
+  sixteen schedules and **none amends another enactment**; section 536 carries no bridge for
+  other enactments, its sub-section (3) construing references "in this Act" only and its
+  sub-section (4) expressly invoking section **6** of the General Clauses Act while saying
+  nothing about section 8; and the Finance Act, 2026 had the Black Money Act open — Part III,
+  section 160 — and inserted ₹20,00,000 provisos into sections 49 and 50 without touching
+  section 43. Section 8(1)'s "unless a different intention appears" also has something to bite
+  on, since **section 2(6) of the Black Money Act defines "Income-tax Act" as the Income-tax
+  Act, 1961 (43 of 1961)** by name and number. The registry's re-check note on
+  `black_money_s43_penalty_inr` now says all of this rather than "UNRESOLVED".
+
+  That the 1961 Act governs AY 2026-27 and earlier is now also on department authority rather
+  than inference: CBDT's
+  [*FAQs on Interplay and Transition*](https://www.incometaxindia.gov.in/documents/81799/11848482/FAQs-on-Interplay-and-Transition.pdf),
+  Q3.9 — "The old Act continues to govern all proceedings relating to tax years before 1st
+  April, 2026" — and Q3.10, confirming an updated return for AY 2025-26 or earlier is filed
+  under section 139(8A) of the old Act. Q4.22 states the same principle for forms: a relief
+  claimed under the old Act stays on the old Act's form, the new form applying only from tax
+  year 2026-27. By that reasoning **AY 2026-27 and earlier stay on Form 67, not Form No. 44**,
+  which is what the registry already said.
+
+- **Recorded the valuation gap in the ₹20,00,000 proviso as a known issue** rather than
+  leaving it in a module docstring. `itrprep/threshold.py` already reports both a peak and a
+  31 December basis and warns when they straddle the line; issue 4 in
+  [`docs/KNOWN-ISSUES.md`](docs/KNOWN-ISSUES.md) now says why it must. The proviso is an
+  *aggregate* test across non-immovable assets, not per asset, and it is a disapplication and
+  not a discretion — "this section shall not apply" — but it says "value" without saying when
+  or on what basis. The Explanation to section 43 imports the Explanation to section 42, which
+  supplies only a currency conversion rule and is written for "the balance in an account
+  maintained in foreign currency"; its phrase "as on the date for which the value is to be
+  determined" presupposes a date that section 43 never fixes for shares. The proviso was
+  substituted by **section 164 of Act 15 of 2024** with effect from 1 October 2024, which
+  widened it to all non-immovable assets without extending the valuation machinery to match.
 
 - **Audited every statutory citation in the tree against the change of Act, one at a time.**
   No find-and-replace was used and none should be: the AY 2026-27 return was genuinely filed
@@ -246,7 +314,8 @@ notification changed it, because they may be filing an earlier year.
   from the end of the tax year, rule 76(13) repeats the updated-return proviso. The
   substantive changes are accountant verification under rule 76(16) where the assessee is a
   company or foreign tax paid is ₹1,00,000 or more, a mandatory foreign TIN, and a new
-  Form No. 45 for a later refund of foreign tax.
+  Form No. 45 intimating the settlement of a dispute over foreign tax whose credit was not
+  claimed.
 - **Corrected the Form 67 deadline.** The README, `itrprep/emit.py` and
   `docs/RUNBOOK_AY2026-27.md` all said Form 67 must be filed *before the return*. That was the
   position before rule 128(9) was substituted by **CBDT Notification No. 100/2022 dated

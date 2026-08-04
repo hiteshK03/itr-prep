@@ -231,8 +231,10 @@ The date advances with the tax year, so re-derive it. Three things changed with 
 2. Rule 76(16) requires an **accountant to verify** Form 44 where the assessee is a company
    or foreign tax paid for the tax year is ₹1,00,000 or more. Check whether that threshold
    has moved — it is new, and new figures move.
-3. A new **Form No. 45** intimates a later refund of foreign tax. There was no counterpart
-   under the 1962 Rules.
+3. A new **Form No. 45** intimates the **settlement of a dispute** over foreign tax whose
+   credit was not claimed, under rule 76(6) read with rule 76(15). There was no counterpart
+   under the 1962 Rules. It is not the refund form: rule 76(14) keeps a later refund of
+   foreign tax already credited on **Form No. 44**, in its Part C.
 
 - [CBDT Notification No. 22/2026, G.S.R. 198(E) — Income-tax Rules, 2026, rule 76 and Form No. 44](https://www.incometax.gov.in/iec/foportal/sites/default/files/2026-03/En-Notified-IT-Rules-2026-20-03-2026.pdf)
 - [Income-tax Act, 2025, ss.159, 160 and 263](https://egazette.gov.in/WriteReadData/2025/265620.pdf)

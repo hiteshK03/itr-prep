@@ -1238,9 +1238,11 @@ the end of the tax year where the return is within the section 263(1) or 263(4) 
 rule 76(13) repeats the updated-return proviso for a return under section 263(6)(a). What
 changed in substance is that rule 76(16) requires an accountant to verify Form 44 where the
 assessee is a company or foreign tax paid for the tax year is ₹1,00,000 or more, the form
-asks for the foreign tax identification number, and a new Form No. 45 intimates a later
-refund of foreign tax. The ITAT authority above is on rule 128(9) and does not
-automatically carry to rule 76; treat the deadline as real.
+asks for the foreign tax identification number, and a new Form No. 45 intimates the
+**settlement of a dispute** over foreign tax whose credit was not claimed (rule 76(6) and
+(15)). A later *refund* of foreign tax already credited is not Form 45 — rule 76(14) puts
+that back on Form No. 44, in its Part C. The ITAT authority above is on rule 128(9) and
+does not automatically carry to rule 76; treat the deadline as real.
 
 ---
 

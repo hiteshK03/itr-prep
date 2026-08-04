@@ -120,9 +120,13 @@ No model recommendation, no quantization advice, no memory budget, no tokens-per
 table. Those answers change monthly, they are properties of a machine rather than of this
 repository, and a stale one in a public repo is worse than none at all.
 
-For a sense of the class, and no more than that: as of August 2026, a ~20B mixture-of-experts
-model at its native 4-bit precision runs comfortably on a laptop with 24 GB of unified memory
-and is adequate for extraction and transcription and nothing more demanding than that. Note
-that published "runs in 24 GB" advice usually means a discrete card with 24 GB of dedicated
-memory and an operating system living elsewhere, which is not the same machine. Work the
-budget out again when you need it.
+For a sense of the class, and no more than that: as of August 2026, this job is served by a
+~12B dense model that reads images natively, run at 8-bit rather than at four, on a laptop
+with 24 GB of unified memory — adequate for extraction and transcription and nothing more
+demanding. Two things there outlast the numbers. It has to be multimodal, because tier 2 is
+reading a rendered page rather than text, and a text-only model cannot do that job at all.
+And the precision has to be high enough that the model still agrees with itself, because a
+heavily quantized small model can disagree with its own full-precision self often enough to
+matter on a column of digits. Note that published "runs in 24 GB" advice usually means a
+discrete card with 24 GB of dedicated memory and an operating system living elsewhere, which
+is not the same machine. Work the budget out again when you need it.

@@ -287,7 +287,8 @@ macOS.
 
 ## Setup
 
-Needs Python 3.12+ and network access once, to cache exchange rates and prices.
+Needs Python 3.10 or newer (CI covers 3.10 to 3.13) and network access once, to cache
+exchange rates and prices.
 
 ```bash
 git clone https://github.com/hiteshK03/itr-prep.git

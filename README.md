@@ -627,8 +627,8 @@ Two things it does deliberately:
 - **Cash counts.** Accounts listed in `cash_balances.csv` have their cash included; accounts
   missing from it are flagged in the notes as securities-only and understated.
 
-Start at **2022**, not 2023: if the Fidelity account predates 2023 then AY 2023-24 is also
-in default, at a higher additional-tax rate for an updated return.
+Start at **2022**, not 2023: if an account predates 2023 then AY 2023-24 may be in default
+too, and the additional-tax rate for an updated return is higher the older the year.
 
 Output goes to stdout, to `--out`, and to a per-lot audit CSV alongside it.
 
@@ -1136,10 +1136,28 @@ securities alone.
 
 ## Prior years: AY 2024-25 and AY 2025-26
 
-`--year 2023` and `--year 2024` feed **updated returns under s.139(8A)** for AY 2024-25 and
-AY 2025-26. All three years in the table below are decided under the Income-tax Act, 1961,
-so the citations in this section are to that Act deliberately. Calendar year → assessment
-year:
+`--year 2023` and `--year 2024` can feed an **updated return under s.139(8A)** for AY 2024-25
+or AY 2025-26. This section documents the mechanics **if** one is being filed; it is not a
+recommendation to file one, and three things should be settled before you reach for it:
+
+- **Run the threshold report first.** Where a year's aggregate of non-immovable foreign assets
+  is under ₹20,00,000 on every basis, the proviso to section 43 of the Black Money Act
+  provides that "this section **shall not apply**" — a disapplication, not a discretion — so
+  for that year there is no section 43 default and nothing for an updated return to cure.
+- **An updated return does not displace a section 43 default in any event.** Section 43's
+  charging limb names sub-sections (1), (4) and (5) of section 139; s.139(8A) is not among
+  them. See [`docs/KNOWN-ISSUES.md`](docs/KNOWN-ISSUES.md) issue 3. A **revised** return under
+  s.139(5) is in that limb; an updated return substitutes for nothing.
+- **An updated return needs positive additional tax.** A disclosure-only correction with no
+  additional liability is not a filing this route supports.
+
+So the reason to file one is the **income** left out of the original return, not the missing
+schedule — and that reason has to be worth the additional tax under s.140B, whose rate rises
+with each 12-month band. Take advice. This tool builds Schedule FA; it does not decide
+whether a year should be filed.
+
+All three years in the table below are decided under the Income-tax Act, 1961, so the
+citations in this section are to that Act deliberately. Calendar year → assessment year:
 
 | `--year` | Financial year | Assessment year | Utility |
 |---|---|---|---|

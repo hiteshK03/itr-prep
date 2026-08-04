@@ -184,6 +184,23 @@ notification changed it, because they may be filing an earlier year.
 
 ### Changed
 
+- **Stated the gate on the prior-year updated-return workflow instead of implying it.**
+  [`README.md`](README.md) described `--year 2023` and `--year 2024` as feeding updated returns
+  under section 139(8A), and [`docs/RUNBOOK_AY2026-27.md`](docs/RUNBOOK_AY2026-27.md) Stage 7
+  was conditional on the threshold report without saying what follows from the condition. Both
+  now say it: where a year's aggregate of non-immovable foreign assets is under ₹20,00,000, the
+  proviso to section 43 of the Black Money Act provides that "this section **shall not apply**" —
+  a disapplication, not a discretion, measured in aggregate per previous year — so **no default
+  arises for that year and there is nothing for an updated return to cure**. Read with
+  the half of [`docs/KNOWN-ISSUES.md`](docs/KNOWN-ISSUES.md) issue 3 that is already settled —
+  section 139(8A) was never in section 43's charging limb, so an updated return does not
+  displace such a default under either Act — the disclosure rationale for a prior-year updated
+  return disappears entirely, and what is left is the **income** omitted from the original
+  return, which has to be worth the additional tax under section 140B and has to be positive at
+  all. Documentation only; no behaviour change. Neither issue 3 nor issue 4 is affected, and
+  the open question at issue 3 — whether section 263(1), (4) and (5) read onto section 43's
+  charging limb from tax year 2026-27 — remains open and remains the one worth watching.
+
 - **Narrowed the section 43 cross-reference question, and closed half of it.**
   [`docs/KNOWN-ISSUES.md`](docs/KNOWN-ISSUES.md) issue 3 asked whether a return under section
   263 of the Act of 2025 reads onto section 43 of the Black Money Act, whose text names

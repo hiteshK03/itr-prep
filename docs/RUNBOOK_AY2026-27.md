@@ -423,9 +423,28 @@ If anything is wrong: discard the copy, fix the input, start again from a fresh 
 
 ## Stage 7 — The earlier years, if the threshold report says you need to
 
-Only if Stage 3 showed a year over ₹20,00,000, or straddling it, and that year's Schedule FA
-was omitted from a return already filed. **Take advice before filing an updated return** —
-the additional tax rate rises with time and the eligibility conditions are narrow.
+**Skip this stage unless Stage 3 showed a year over ₹20,00,000 or straddling it**, and that
+year's Schedule FA was omitted from a return already filed. **Take advice before filing an
+updated return** — the additional tax rate rises with time and the eligibility conditions are
+narrow.
+
+The gate is worth stating rather than implying, because the default answer is to skip:
+
+- **Under the threshold, there is nothing here to fix.** The proviso to section 43 of the Black
+  Money Act provides that "this section **shall not apply**" where the aggregate value of
+  non-immovable foreign assets does not exceed ₹20,00,000. That is a disapplication, not a
+  discretion, and it is measured in aggregate per previous year. No default arises, so no
+  remedy is needed.
+- **And an updated return would not cure such a default anyway.** Section 43's charging limb
+  names sub-sections (1), (4) and (5) of section 139, never (8A) — see
+  [`docs/KNOWN-ISSUES.md`](docs/KNOWN-ISSUES.md) issue 3. A **revised** return under s.139(5)
+  *is* in that limb and does displace the omission, but it is only available while the current
+  year's revision window is open; there is no counterpart for a year whose window has closed,
+  which is every year this stage covers.
+- **So the only reason to work through this stage is income left out of the original return**,
+  not the missing schedule. An updated return also requires **positive additional tax** — a
+  disclosure-only correction is not a filing this route supports — so if nothing was
+  under-reported there is no remedy to reach for.
 
 Calendar year → assessment year → utility:
 

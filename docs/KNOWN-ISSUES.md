@@ -216,11 +216,16 @@ The proviso to section 43, inserted by the Finance (No. 2) Act, 2024 with effect
 
 Three things are clear from those words and one is missing.
 
-**Clear.** It is an *aggregate* test across the undisclosed non-immovable assets, not a
-per-asset test — "an asset or assets … the aggregate value of such asset or assets". It is a
-disapplication, not a discretion: "this section shall not apply", so where the aggregate is
-under the line the Assessing Officer has nothing to exercise judgement about. And it operates
-per year, because section 43 itself attaches to a return furnished "for any previous year".
+**Clear.** It is an *aggregate* test, not a per-asset test — "an asset or assets … the
+aggregate value of such asset or assets". It is a disapplication, not a discretion: "this
+section shall not apply", so where the aggregate is under the line the Assessing Officer has
+nothing to exercise judgement about. And it operates per year, because section 43 itself
+attaches to a return furnished "for any previous year".
+
+> This paragraph read "an aggregate test across the **undisclosed** non-immovable assets"
+> until 5 August 2026. That is still the better view, but it was asserted here as clear when
+> it is not: *which* assets fall inside the aggregate is a separate question from whether the
+> test is aggregate at all, and it is open. **See issue 5.**
 
 **Missing: the date, and the basis.** The proviso says "value" without saying *when*, and
 without saying cost or market. The Explanation to section 43 does not fill the gap — it
@@ -247,3 +252,78 @@ one and present the answer as settled.
 substituted by **section 164 of Act 15 of 2024**, the Finance (No. 2) Act, 2024, with effect
 from 1 October 2024, per the amendment footnote to section 43 in the as-amended text; the
 same section substituted the proviso to section 42.
+
+---
+
+## 5. Which assets the ₹20,00,000 proviso aggregates over is unsettled
+
+**Status:** open. **Better view held at about 80% confidence, and no authority either way** —
+no court, no tribunal, no circular, no FAQ has decided it. Recorded against
+`black_money_relief_threshold_inr` alongside issue 4, which is the valuation-date half of the
+same sentence.
+**Bites when:** a threshold report is read as *the* proviso figure for a year in which
+Schedule FA was **partly** completed. It is harmless where Schedule FA was blank or absent,
+which is why it can go unnoticed for a long time.
+
+The proviso disapplies section 43 "in respect of an asset or assets (other than immovable
+property), where the aggregate value of **such asset or assets** does not exceed twenty lakh
+rupees". Issue 4 records that this is an aggregate test and that its valuation date is
+missing. This entry is about a different gap: **"such asset or assets" needs a referent, and
+the proviso does not supply one.** Two readings are available.
+
+- **Narrow.** "Such" points back to the assets in respect of which section 43 applies — the
+  ones the charging limb identified, that is, **the undisclosed ones**. Aggregate those.
+- **Broad.** "Such" points at the taxpayer's whole non-immovable foreign portfolio for the
+  year, disclosed and undisclosed together.
+
+**The narrow reading is the better one, on three legs.**
+
+1. **The charging limb identifies defaults asset by asset.** Section 43 penalises a person who
+   "fails to furnish any information … relating to *any asset* … or relating to any income
+   from a source located outside India". The default is constituted by the particular asset or
+   income not disclosed. A proviso that disapplies "this section … in respect of an asset or
+   assets" is disapplying it in respect of the same things the section fastened on. On the
+   broad reading, "such" reaches assets the section never mentioned.
+2. **The stated mischief is the omitted asset's own value.** The Memorandum to the Finance
+   (No. 2) Bill, 2024 explains the amendment as addressing cases where the penalty was
+   disproportionate to the value of the asset that went undisclosed. That framing measures
+   proportionality against the omission, not against everything the taxpayer holds.
+3. **Section 42 is the objection, and it runs the other way.** The same amendment inserted the
+   identical proviso into section 42, whose charging limb catches a person who "at any time
+   during such previous year … held any asset … located outside India" — so under section 42
+   *every* asset held is one in respect of which the section applies, and the proviso there
+   does sweep the whole portfolio. **One form of words, applied faithfully to two different
+   charging limbs, yields the whole portfolio under section 42 and the undisclosed subset
+   under section 43.** That is why Parliament could reuse it. The broad reading has to make
+   the words mean "whole portfolio" in both places — correct under section 42 only by
+   accident, and requiring under section 43 a referent that section never supplies.
+
+**Why the confidence is 80% and not higher.** The point is unlitigated. The reported section
+43 material after the amendment goes to whether the penalty is mandatory, not to aggregation
+scope. Practitioner commentary that touches the question tends to state the broad reading
+without arguing it, which is weak authority but is what a reader will find first. And an
+Assessing Officer has an administratively easier job under the broad reading, which is not a
+legal argument but does predict what may be asserted.
+
+**What this means for the report this package produces.** `itrprep/threshold.py` aggregates
+**every** non-immovable holding in the ledger for the year. That is the broad reading, and it
+is the right default for a tool: it is conservative, it needs no view about what a particular
+return did or did not disclose, and it cannot be wrong in the taxpayer's favour. **But the
+number it prints is not necessarily the number the proviso tests.** Where a year's Schedule FA
+was partly completed, the figure that matters on the better view is lower — possibly much
+lower — and the tool has no way to know which holdings were disclosed. **So:**
+
+- Treat an OVER verdict for a partly-disclosed year as **"OVER on the broad reading"**, and
+  as a prompt to compute the undisclosed subset by hand, not as an answer.
+- An UNDER verdict is safe on both readings. The broad aggregate is a ceiling on the narrow
+  one, so if the whole portfolio is under the line, the undisclosed subset is too.
+- Where Schedule FA was blank or no return was furnished, the two readings coincide and the
+  distinction does not arise.
+
+**Sources.** Black Money Act, 2015, sections 42 and 43 as amended, and the proviso substituted
+by **section 164 of Act 15 of 2024** — as at issue 4. *Memorandum Explaining the Provisions in
+the Finance (No. 2) Bill, 2024*, under "Amendments in section 42 and 43 of the Black Money
+Act, 2015" — [indiabudget.gov.in](https://www.indiabudget.gov.in/budget2024-25/doc/memo.pdf).
+The searches that came back empty are part of the finding and were: the proviso's operative
+words against reported decisions and CBDT material, and section 43 aggregation scope generally.
+**Absence of authority is recorded as a result here, not as an incomplete search.**

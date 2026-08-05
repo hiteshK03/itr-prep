@@ -24,6 +24,17 @@ are both defensible and can land on opposite sides of the line. Picking one and 
 other would conceal exactly the uncertainty that matters, so both are always shown, and a
 year where they straddle the line is called out.
 
+Which assets go into the aggregate
+----------------------------------
+Every non-immovable holding in the ledger, for the year. That is the conservative reading and
+it is the only one a tool can implement, because nothing here knows what a filed Schedule FA
+did or did not disclose. It is not certainly the reading the proviso bears: "such asset or
+assets" more likely points back to the *undisclosed* assets, the ones section 43's charging
+limb identified, in which case the figure that matters for a partly-disclosed year is lower
+than the one reported. The broad aggregate is a ceiling on the narrow one, so UNDER is safe
+either way and only OVER needs a second look. docs/KNOWN-ISSUES.md issue 5 has the argument,
+the confidence, and the fact that no authority decides it.
+
 This is arithmetic on the taxpayer's own broker data. It is not advice on which basis a
 tribunal would accept.
 """
@@ -347,6 +358,13 @@ def render(report: ThresholdReport) -> str:
     add("")
     add("The proviso fixes no valuation date for non-bank assets, so both a peak-during-")
     add("the-year and a closing-at-31-December basis are shown. Neither is settled law.")
+    add("")
+    add("This report aggregates EVERY non-immovable holding in the ledger. On the better")
+    add("view the proviso aggregates only the UNDISCLOSED assets, so for a year whose")
+    add("Schedule FA was partly completed the figure that matters is lower than the one")
+    add("below, and this tool cannot know which holdings were disclosed. An UNDER verdict")
+    add("is safe on either reading; treat an OVER verdict for such a year as a prompt to")
+    add("compute the undisclosed subset by hand. See docs/KNOWN-ISSUES.md issue 5.")
     add("")
     # Both figures above come from the registry, so say which one, and when it was last
     # checked. A verdict worth Rs 10,00,000 an assessment year should not rest on a

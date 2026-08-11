@@ -12,6 +12,81 @@ deductions. The name is deliberately broader than the tool, because the directio
 wider — but the direction is not the product. [Roadmap](#roadmap) says what is intended, and
 says plainly that none of it exists yet.
 
+## Quickstart
+
+```bash
+git clone https://github.com/hiteshK03/itr-prep.git && cd itr-prep
+./setup.sh                    # .venv, two dependencies, and the FX and price caches
+
+# See it work on invented data, before you go looking for your own exports:
+.venv/bin/python -m itrprep.cli build --year 2025 --work tests/synthetic --out /tmp/demo.json
+
+# Then with your own. `init` writes the CSV templates; `run` does the whole pipeline.
+.venv/bin/python -m itrprep.cli init --work work
+.venv/bin/python -m itrprep.cli run --year 2025 --drop ~/Downloads
+```
+
+[Setup](#setup) has the detail, [Try it without your own data](#try-it-without-your-own-data)
+explains what the demo above printed, and [The workflow](#the-workflow) is the real thing step
+by step. Read [six things that will bite you](#read-this-first-six-things-that-will-bite-you)
+before you file on any of it — `--split-basis` alone is a factor-of-ten error when it is wrong.
+
+## Contents
+
+- [The problem](#the-problem)
+- [The way in](#the-way-in)
+- [What this does](#what-this-does)
+- [Read this first: six things that will bite you](#read-this-first-six-things-that-will-bite-you)
+- [Where this runs](#where-this-runs)
+  - [The four routes off Windows, and what each is worth](#the-four-routes-off-windows-and-what-each-is-worth)
+  - [The line this project will not cross](#the-line-this-project-will-not-cross)
+- [Setup](#setup)
+  - [Try it without your own data](#try-it-without-your-own-data)
+  - [The ITD schema (for validation)](#the-itd-schema-for-validation)
+  - [On a network that intercepts TLS](#on-a-network-that-intercepts-tls)
+- [The workflow](#the-workflow)
+  - [The short version](#the-short-version)
+  - [0a. If a statement is password-protected](#0a-if-a-statement-is-password-protected)
+  - [0. Create the working files](#0-create-the-working-files)
+  - [1. Normalize each broker export](#1-normalize-each-broker-export)
+  - [2. Fill in issuers and accounts](#2-fill-in-issuers-and-accounts)
+  - [3. Build](#3-build)
+  - [3b. The ₹20 lakh threshold report](#3b-the-20-lakh-threshold-report)
+  - [3c. Preflight — `doctor`](#3c-preflight--doctor)
+  - [4. Import into the utility — scripted and verified](#4-import-into-the-utility--scripted-and-verified)
+- [Supported brokers, and what to export from each](#supported-brokers-and-what-to-export-from-each)
+  - [1. E\*TRADE / Morgan Stanley StockPlan Connect](#1-etrade--morgan-stanley-stockplan-connect)
+  - [2. Fidelity NetBenefits](#2-fidelity-netbenefits)
+  - [3. INDmoney (US stocks)](#3-indmoney-us-stocks)
+  - [Also needed, from your own records](#also-needed-from-your-own-records)
+  - [An unsupported broker](#an-unsupported-broker)
+- [Data dictionary](#data-dictionary)
+  - [`transactions.csv`](#transactionscsv)
+  - [`issuers.csv`](#issuerscsv)
+  - [`accounts.csv`](#accountscsv)
+  - [`prices_override.csv`](#prices_overridecsv)
+- [How the numbers are computed](#how-the-numbers-are-computed)
+  - [Reporting period](#reporting-period)
+  - [One row per lot](#one-row-per-lot)
+  - [Exchange rates — SBI TT buying rate, per date](#exchange-rates--sbi-tt-buying-rate-per-date)
+  - [Peak value — the interpretive part](#peak-value--the-interpretive-part)
+  - [Stock splits: the build stops rather than guess](#stock-splits-the-build-stops-rather-than-guess)
+  - [Dividends across lots](#dividends-across-lots)
+- [Table A2: do you need the custodial-account rows?](#table-a2-do-you-need-the-custodial-account-rows)
+  - [Cash balances — `cash_balances.csv`](#cash-balances--cash_balancescsv)
+- [Prior years: AY 2024-25 and AY 2025-26](#prior-years-ay-2024-25-and-ay-2025-26)
+- [Schedule CG, OS, FSI, TR and the foreign tax credit statement](#schedule-cg-os-fsi-tr-and-the-foreign-tax-credit-statement)
+- [Where every statutory figure comes from](#where-every-statutory-figure-comes-from)
+  - [AY 2027-28 is a change of statute, not a refresh](#ay-2027-28-is-a-change-of-statute-not-a-refresh)
+- [Verification](#verification)
+  - [The Excel round-trip, live, on all three utilities](#the-excel-round-trip-live-on-all-three-utilities)
+- [Supply chain](#supply-chain)
+- [Command reference](#command-reference)
+- [Layout](#layout)
+- [Known limitations](#known-limitations)
+- [Roadmap](#roadmap)
+- [Licence and contributing](#licence-and-contributing)
+
 ## The problem
 
 An Indian resident holding US employer equity — RSUs, an ESPP, shares bought through a
@@ -297,7 +372,9 @@ cd itr-prep
 ```
 
 `setup.sh` creates `.venv`, bootstraps pip if the system has none, installs the two runtime
-dependencies (`requests` and `jsonschema`), and caches SBI exchange rates. Then:
+dependencies (`requests` and `jsonschema`), and warms both offline caches: the SBI TT-buy
+series, and the daily closes the test suites read. The second one is most of the half-minute
+setup takes, and it is why the self-check `setup.sh` prints works on a fresh clone. Then:
 
 ```bash
 .venv/bin/python -m itrprep.cli --help
@@ -308,6 +385,57 @@ Everything below assumes you are in the repository root. For brevity, define:
 ```bash
 alias itr-prep="$PWD/.venv/bin/python -m itrprep.cli"
 ```
+
+### Try it without your own data
+
+The repository ships the synthetic dataset the test suites use — four invented tickers across
+three accounts, described in [`tests/synthetic/README.md`](tests/synthetic/README.md). Building
+against it needs no broker export, no PAN and no `work/` directory, and it is the fastest way to
+see what the tool actually emits:
+
+```bash
+.venv/bin/python -m itrprep.cli build --year 2025 --work tests/synthetic --out /tmp/demo.json
+```
+
+```
+Calendar year 2025  (1 Jan 2025 - 31 Dec 2025)
+  Table A3 rows (foreign equity/debt) : 12
+  Table A2 rows (custodial accounts)  : 3
+  peak basis                          : usd
+  JSON                                : /tmp/demo.json
+  audit trail                         : /tmp/demo_audit.csv
+  CG / OS figures                     : /tmp/demo_other_schedules.txt
+  A3 peak total                       : INR 6,534,958
+  A3 closing total                    : INR 3,212,518
+```
+
+Three files, and the two beside the JSON are the interesting ones. The audit CSV is the per-lot
+working — one row per lot, carrying `peak_date`, the `peak_fx` rate used on it, and an
+`acquisition_source` naming the transaction line each figure came from, which is what you would
+hand an assessing officer. The other-schedules file carries the financial-year figures that
+Schedule FA does not:
+
+```
+Schedule CG -- foreign shares, to enter as two aggregate blocks:
+  Short term (held <= 24 months)
+    Net short-term gain         : INR 618,438
+  Long term (held > 24 months)
+    Net long-term gain          : INR 496,600
+
+Schedule OS / FSI / TR and the foreign tax credit statement -- foreign dividends:
+    Gross dividend  : USD 418.46  = INR 36,460
+    US tax withheld : USD 104.64  = INR 9,117
+```
+
+It will also print a banner saying schema validation was skipped, because a bare clone has no
+ITD schema — that is the next section, and it is correct to be loud about it. The rupee figures
+above are what this dataset produces at the exchange rates and closes cached on the day it ran;
+they will move a little as the price cache is refreshed, which is why the suites assert
+conservation properties rather than golden numbers. Nothing here is anyone's real holding.
+
+`--work tests/synthetic_split` is the other dataset: 10 AVGO shares held through the 10-for-1
+split of July 2024. That one refuses to build without `--split-basis`, which is the trap
+[Stock splits](#stock-splits-the-build-stops-rather-than-guess) is about.
 
 ### The ITD schema (for validation)
 

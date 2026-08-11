@@ -26,6 +26,9 @@ python scripts/check_no_real_data.py
   a tracked CSV that does not use the `SYNTH-`/`TEST-` convention, and on any tracked
   spreadsheet, PDF or archive — because nothing can read inside one. It prints what it cannot
   check, too; read that list rather than treating a pass as a clearance.
+  The one file it does not scan is itself: `--self-test` has to contain examples of what it
+  looks for, so a change to `scripts/check_no_real_data.py` is the one diff a reviewer reads
+  for this by eye.
 - **It scans the history, not just the tree**, because `git log -p` hands out a deleted
   secret exactly as readily as a current one. If real data does get committed, treat it as
   published: rotate anything credential-shaped and rewrite history. Deleting it in a later

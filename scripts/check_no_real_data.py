@@ -74,6 +74,20 @@ RISKY_BINARY_SUFFIXES = {
 # entry here is a file this check has agreed not to look inside.
 ALLOWED_BINARIES: set[str] = set()
 
+# This file is excluded from the content scan, in the tree and in the history alike, because
+# --self-test has to contain examples of exactly what the scan looks for. It flagged its own
+# planted PAN the moment it stopped being untracked, which is the check working correctly and
+# also useless.
+#
+# The alternative -- assembling every planted value from fragments so no literal appears --
+# was rejected: it makes the one file a reviewer must read closely harder to read, and it
+# would not help anyway, since the literals are already in the history of the commit that
+# introduced them.
+#
+# This is a blind spot, and it is one path, named here and named in COVERAGE. If you put a
+# real value in this file, nothing will catch it.
+SELF_EXCLUDED = frozenset({"scripts/check_no_real_data.py"})
+
 # Columns whose whole purpose is to hold an account number. A fixture is allowed to have
 # them -- Table A2 needs them -- but only with an invented value.
 ACCOUNT_NUMBER_COLUMNS = {"account_number", "account_no", "accountnumber"}
@@ -197,6 +211,8 @@ def check_tree(findings, repo=None):
     """Every tracked text file, as it stands now."""
     seen = {}
     for path in tracked_files(repo):
+        if path in SELF_EXCLUDED:
+            continue
         full = os.path.join(repo or ".", path)
         try:
             with open(full, "rb") as fh:
@@ -238,9 +254,17 @@ def check_history(findings, repo=None):
               "--format=%n=== commit %H%n%B", repo=repo)
     seen = {}
     where = "an early commit"
+    # Commit messages belong to no path, so a hunk's exclusion has to end at the next commit.
+    skipping = False
     for line in log.split("\n"):
         if line.startswith("=== commit ") and len(line) == len("=== commit ") + 40:
             where = f"commit {line[len('=== commit '):][:12]}"
+            skipping = False
+            continue
+        if line.startswith("diff --git "):
+            skipping = _diff_path(line) in SELF_EXCLUDED
+            continue
+        if skipping:
             continue
         # Only added, removed and message lines carry content worth scanning; the +++/---
         # headers carry paths, which check_env_files already covers.
@@ -248,6 +272,19 @@ def check_history(findings, repo=None):
             continue
         scan_text(line, where, findings, seen)
     report(seen, findings, "the history")
+
+
+def _diff_path(header):
+    """The b-side path out of a `diff --git a/x b/x` header, or "" if it cannot be read.
+
+    Unreadable means not excluded, which is the safe direction: an unrecognised header gets
+    scanned rather than skipped.
+    """
+    rest = header[len("diff --git "):]
+    marker = rest.find(" b/")
+    if not rest.startswith("a/") or marker == -1:
+        return ""
+    return rest[marker + len(" b/"):]
 
 
 def check_binaries(findings, repo=None):
@@ -351,6 +388,9 @@ What it cannot check, and what still needs a human:
   - a real name, an address, or a screenshot's contents.
   - whether an invented figure is genuinely invented. Nothing can tell.
   - anything in a ref this clone does not have.
+  - scripts/check_no_real_data.py itself, in the tree or in the history. --self-test has to
+    contain examples of what the scan looks for, so the scan skips that one file. It is the
+    one file whose diff a reviewer has to read for this by eye.
 """.strip()
 
 
@@ -469,6 +509,23 @@ def self_test():
         if "spreadsheet, PDF or archive" not in _headlines(run_checks(repo)):
             failures.append("a tracked .xlsx: not caught")
 
+        # The exclusion is scoped to one path, not to scripts/. A leak in any other script
+        # is still caught, in the tree and in the history.
+        repo = _fresh_repo(tmp, "another_script")
+        _plant(repo, "scripts/other.py", "PAN = 'ABCPQ1234R'\n", "Add a script")
+        if "PAN-shaped" not in _headlines(run_checks(repo)):
+            failures.append("a PAN in another script: not caught")
+
+        # And the exclusion itself, which is the blind spot COVERAGE names. If this ever
+        # starts failing, the scan has begun reading its own examples and every run will
+        # report them.
+        repo = _fresh_repo(tmp, "self_excluded")
+        _plant(repo, "scripts/check_no_real_data.py", "PAN = 'ABCPQ1234R'\n", "Add the check")
+        findings = run_checks(repo)
+        if not findings.ok:
+            failures.append(
+                f"the check's own file was scanned rather than skipped: {_headlines(findings)}")
+
         # And the negative case. A repository carrying only the documented placeholders,
         # the filler mobile number and a reserved-domain address must pass, or the check is
         # noise and everybody learns to ignore it.
@@ -492,7 +549,7 @@ def self_test():
         for line in failures:
             print(f"  - {line}")
         return False
-    print(f"  self-test: {len(cases) + 3} planted leaks caught, placeholders not flagged")
+    print(f"  self-test: {len(cases) + 4} planted leaks caught, placeholders not flagged")
     return True
 
 

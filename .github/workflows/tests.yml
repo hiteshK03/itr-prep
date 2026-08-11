@@ -117,6 +117,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # This job had never once checked a URL. It ran the suite without installing anything,
+      # so it died on `import requests` before reaching the first HEAD -- and because it is
+      # continue-on-error, it failed silently on every run since the initial commit. A
+      # maintenance signal that cannot fire is not a maintenance signal.
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
       - name: HEAD every URL in the rules registry
         env:
           ITRPREP_CHECK_SOURCE_URLS: "1"

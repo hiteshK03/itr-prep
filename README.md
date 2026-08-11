@@ -1722,7 +1722,7 @@ itr-prep run        --year YYYY [--drop DIR] [--work DIR] [--out FILE]
                   [--account BROKER=ACCOUNT_ID ...] [--years 2022-2025]
                   [--peak-basis {usd,inr}] [--split-basis {current,historical}]
                   [--format {itr,prefill}] [--merge-into FILE] [--no-a2]
-                  [--offline] [--no-validate]
+                  [--allow-dropped-rows] [--offline] [--no-validate]
 itr-prep doctor     [--work DIR] [--years 2022-2025] [--no-prices] [--offline]
 itr-prep import     --year YYYY --json FILE --utility FILE [--audit FILE]   # Windows/WSL
                   [--workdir 'C:\temp\itrprep'] [--name STEM] [--label NAME]
@@ -1730,6 +1730,7 @@ itr-prep import     --year YYYY --json FILE --utility FILE [--audit FILE]   # Wi
 itr-prep fx-update  [--fx-cache PATH]
 itr-prep normalize  --broker {etrade,fidelity,indmoney} --input FILE --account-id ID
                   [--out FILE] [--append] [--default-ticker SYM] [--acq-kind KIND]
+                  [--allow-dropped-rows]
 itr-prep build      --year YYYY --out FILE [--work DIR]
                   [--format {itr,prefill}] [--merge-into FILE]
                   [--peak-basis {usd,inr}] [--split-basis {current,historical}]
@@ -1740,8 +1741,15 @@ itr-prep threshold  [--years 2022-2025] [--work DIR] [--out FILE]
 itr-prep unlock     [--input PATH] [--out-dir DIR] [--env-file FILE]
                   [--list-credentials]
 itr-prep rules      [--assessment-year YYYY-YY] [--annual-only]
-itr-prep validate   --json FILE [--schema FILE]
+itr-prep validate   --json FILE [--schema FILE] [--year YYYY]
 ```
+
+Path overrides are deliberately left out above — `--transactions`, `--issuers`, `--accounts`,
+`--overrides`, `--fx-cache`, `--price-cache` and `--schema` all point a command at a file
+somewhere other than its default, and `--help` on any subcommand lists the ones it takes.
+`--allow-dropped-rows` is in the list because it is not plumbing: an unreadable row is
+**blocking**, and this is the only way past it. Read the named rows first — a dropped vest
+understates Schedule FA.
 
 `run` composes `fx-update`, `normalize`, `doctor`, `threshold` and `build`. It stops at the
 first hard error and names the stage. The individual subcommands are unchanged and still work

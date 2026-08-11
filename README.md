@@ -407,6 +407,7 @@ Calendar year 2025  (1 Jan 2025 - 31 Dec 2025)
   CG / OS figures                     : /tmp/demo_other_schedules.txt
   A3 peak total                       : INR 6,534,958
   A3 closing total                    : INR 3,212,518
+  cash added to A2                    : none (no rows for 2025 in tests/synthetic/cash_balances.csv) -- Table A2 counts securities only and understates any account that held uninvested cash
 ```
 
 Three files, and the two beside the JSON are the interesting ones. The audit CSV is the per-lot

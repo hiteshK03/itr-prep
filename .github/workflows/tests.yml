@@ -141,10 +141,31 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
+      - name: Warm the FX cache
+        # The suite reads data/sbi_ttbuy_usd.csv to drive a sale across the long-term
+        # threshold, and it does that before it reaches the URL block. data/ is gitignored,
+        # so without this the run dies at FxRates.load having HEADed nothing at all. That
+        # is this job's whole history: it failed on a missing install, and once that was
+        # fixed it failed one step later on a missing cache. Both times it checked no URL.
+        run: python -m itrprep.cli fx-update
       - name: HEAD every URL in the rules registry
         env:
           ITRPREP_CHECK_SOURCE_URLS: "1"
-        run: python tests/test_rules_registry.py
+        run: |
+          status=0
+          python tests/test_rules_registry.py > "$RUNNER_TEMP/sources.out" 2>&1 || status=1
+          cat "$RUNNER_TEMP/sources.out"
+          # A page that moved and a job that broke both look like a red X on a job nobody
+          # is allowed to let fail a pull request. Only one of them is the signal this job
+          # exists for. The URL block prints one line per distinct cited URL, so an absence
+          # of those lines means the run never got that far, whatever else it reported.
+          if ! grep -qE '^  (ok|FAIL) +.*does not report the page gone' \
+                "$RUNNER_TEMP/sources.out"; then
+            echo "::error::this job ended before HEADing a single URL, so no cited source" \
+                 "was checked -- fix the job, do not read this as a moved page"
+            exit 1
+          fi
+          exit $status
 
   lint:
     runs-on: ubuntu-latest

@@ -82,26 +82,29 @@ jobs:
           fi
           exit $status
 
-      - name: No real data in the tree
-        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
-        # Cheap, and it guards the one mistake in this repository that a later commit cannot
-        # undo. A committed .env or a real PAN is published the moment it is pushed.
-        #
-        # The allowlist is the three placeholders the docs and fixtures use. Anything else
-        # PAN-shaped fails, which is the right default: a contributor pasting their own PAN
-        # into an example is a far likelier accident than a false positive.
-        run: |
-          if git ls-files | grep -qxF '.env'; then
-            echo "::error::.env is tracked. It holds document passwords."
-            exit 1
-          fi
-          hits=$(git grep -nIE '\b[A-Z]{5}[0-9]{4}[A-Z]\b' \
-                 | grep -vE 'AAAAA9999A|ABCDE1234F|ZZZZZ0000Z' || true)
-          if [ -n "$hits" ]; then
-            echo "::error::a PAN-shaped string that is not a known placeholder is committed:"
-            echo "$hits"
-            exit 1
-          fi
+  hygiene:
+    name: no real data in the tree or its history
+    runs-on: ubuntu-latest
+    # Its own job rather than a step inside the matrix, because it needs the whole history and
+    # the suites do not. A .env or a real PAN committed once stays readable through
+    # `git log -p` forever, so checking only the tree checked the easy half.
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Default is depth 1, which would silently reduce the history scan to one commit.
+          # The script fails on a shallow clone rather than quietly covering less, but this
+          # is what makes it able to do the job at all.
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # No dependencies: the check is stdlib only, so it cannot be broken by an install
+      # failure and contributors can run it on a bare checkout.
+      #
+      # --self-test plants each kind of leak in a throwaway repository and asserts it is
+      # caught, then checks this one. A hygiene check nobody tests is one that quietly stops
+      # working, and this repository has already had that happen to a whole test suite.
+      - run: python scripts/check_no_real_data.py --self-test
 
   sources:
     name: cited sources still resolve

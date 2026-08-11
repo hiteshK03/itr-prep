@@ -12,11 +12,24 @@ as sensitive as personal data gets.
   not in fixtures, not in an issue, not in a commit message.
 - Fixtures use invented data throughout. The established placeholders are tickers like `CSCO`
   and grant numbers like `RU100001`; follow them rather than inventing a new convention.
-- `work/`, `out/`, `.env` and decrypted documents are gitignored. Keep them that way.
-- CI fails on a tracked `.env` or on any PAN-shaped string that is not one of the three
-  documented placeholders.
-- If real data does get committed, treat it as published: rotate anything credential-shaped
-  and rewrite history. Deleting it in a later commit does nothing.
+- `work/`, `out/`, `.env`, anything else `*.env`, and decrypted documents are gitignored. Keep
+  them that way.
+- **Run the check before you push.** It needs no dependencies and takes about a second:
+
+```bash
+python scripts/check_no_real_data.py
+```
+
+  It fails on a credential file anywhere in the tree or the history, on a PAN-shaped string
+  that is not one of the three documented placeholders, on an Aadhaar-shaped or mobile-shaped
+  number, on an email address outside the reserved example domains, on an `account_number` in
+  a tracked CSV that does not use the `SYNTH-`/`TEST-` convention, and on any tracked
+  spreadsheet, PDF or archive — because nothing can read inside one. It prints what it cannot
+  check, too; read that list rather than treating a pass as a clearance.
+- **It scans the history, not just the tree**, because `git log -p` hands out a deleted
+  secret exactly as readily as a current one. If real data does get committed, treat it as
+  published: rotate anything credential-shaped and rewrite history. Deleting it in a later
+  commit does nothing.
 
 See [`SECURITY.md`](SECURITY.md) for how document passwords are handled, and why they must
 never appear in a filename, a log line or a model's context window.

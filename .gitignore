@@ -75,8 +75,13 @@ ITR-2_*Main*.json
 # --- Credentials ------------------------------------------------------------
 # .env holds document passwords, and the PAN and date of birth used to derive them.
 # .env.example is the committed template and carries placeholders only.
+#
+# `*.env` is here because `.env` and `.env.*` between them missed the names people actually
+# reach for: `secrets.env` and `creds.env` were not ignored at all, so `git add .` would have
+# taken either one. The negation stays last so the template survives all three patterns.
 .env
 .env.*
+*.env
 !.env.example
 *.pem
 *.key

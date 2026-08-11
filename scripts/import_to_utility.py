@@ -96,6 +96,52 @@ def powershell(script_text: str, timeout: int = 900) -> subprocess.CompletedProc
     )
 
 
+# Excel.Application's CLSID. When Excel is not installed on the Windows side, PowerShell
+# fails to construct it and says `80040154 Class not registered` beside a raw GUID, which
+# tells the reader nothing about what to do.
+_EXCEL_CLSID = "00024500-0000-0000-c000-000000000046"
+_NO_EXCEL_SIGNATURES = (
+    _EXCEL_CLSID,
+    "80040154",
+    "class not registered",
+    "cannot find type [excel.application]",
+    "retrieving the com class factory",
+)
+
+
+def explain_no_excel(*outputs: str) -> str | None:
+    """Recognise "Excel is not installed" in PowerShell's output, and say so in a sentence.
+
+    `itrprep.host` gates this step on a Windows Excel being *reachable* -- a Windows Python,
+    or a WSL shell with `powershell.exe` and `wslpath`. It deliberately does not gate on Excel
+    being *installed*, because the only way to ask is to build the COM object, which is this
+    step. So a WSL box with interop and no Excel passes the boundary and arrives here, and
+    the failure is a COM error rather than the plain refusal `host.explain()` would have given.
+
+    Returns None when the output does not carry that signature, so an unrelated failure is
+    never mislabelled as a missing Excel.
+    """
+    haystack = "\n".join(outputs).lower()
+    if not any(sig in haystack for sig in _NO_EXCEL_SIGNATURES):
+        return None
+    return (
+        "Excel does not appear to be installed on the Windows side.\n\n"
+        "Windows interop is present -- `powershell.exe` and `wslpath` both work, which is\n"
+        "why this got as far as trying -- but constructing `Excel.Application` failed with\n"
+        "a COM class-not-registered error. That is what Windows says when Excel itself is\n"
+        "missing, so there is nothing here to run the department's macros.\n\n"
+        "Nothing else in this tool needs Excel. The Schedule FA JSON and the audit CSV are\n"
+        "already written and complete; only this last step needs the workbook. Either:\n\n"
+        "  1. Install Excel for Windows on this machine, or run `itr-prep import` on a\n"
+        "     Windows 11 VM that has it. That is the tested path.\n"
+        "  2. Take the JSON to the department's Common Offline Utility for macOS, which\n"
+        "     imports a prepared JSON without Excel. This project has NOT tested that\n"
+        "     route -- check every Schedule FA row before filing.\n\n"
+        "Excel for Mac cannot run the utility whatever you do: its VBA binds Windows\n"
+        "CryptoAPI and builds Windows-only COM objects. See the README's \"Where this runs\"."
+    )
+
+
 # Office caches the tenant's Purview label policy here, one gzipped XML per signed-in
 # identity. It is the same list the "Add sensitivity label" dialog offers.
 LABEL_TAG = re.compile(r"<label\b(?P<attrs>[^>]*?)(?P<selfclose>/?)>", re.S)
@@ -583,8 +629,13 @@ def run_import(utility: str, json_path: str, year: int, workdir_win: str,
                 print(f"    {line}")
 
     if not os.path.exists(dump_wsl):
+        # A missing Excel is the one cause of this that is not a defect, and it arrives as a
+        # COM error rather than as the platform refusal, because the boundary can only test
+        # whether Windows is reachable. Say what it means before dumping the transcript.
+        no_excel = explain_no_excel(completed.stdout, completed.stderr)
         raise ImportFailed(
-            "the driver produced no cell dump, so nothing can be verified.\n"
+            (f"{no_excel}\n\n" if no_excel else "")
+            + "the driver produced no cell dump, so nothing can be verified.\n"
             f"{_trace_tail(trace_wsl)}\n"
             f"powershell exit={completed.returncode}\n"
             f"stdout:\n{completed.stdout[-2500:]}\n"

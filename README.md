@@ -1497,14 +1497,14 @@ successor at section 90(7)–(8) governs mutual fund units, so it is now in.
 
 ## Verification
 
-Eight suites, 1,166 checks, all runnable offline once the caches are warm, and all of them
+Eight suites, 1,171 checks, all runnable offline once the caches are warm, and all of them
 on macOS and Linux alike — CI runs the whole set on both:
 
 ```bash
 .venv/bin/python tests/test_validation_teeth.py        # 26 cases
 .venv/bin/python tests/test_pipeline.py                # 80 checks
 .venv/bin/python tests/test_splits_cash_threshold.py   # 67 checks
-.venv/bin/python tests/test_doctor_readback.py         # 96 checks
+.venv/bin/python tests/test_doctor_readback.py         # 101 checks
 .venv/bin/python tests/test_multisection_adapter.py    # 111 checks
 .venv/bin/python tests/test_multisheet_workbook.py     # 117 checks
 .venv/bin/python tests/test_rules_registry.py          # 579 checks
@@ -1530,9 +1530,9 @@ three schema-dependent checks. Both say so when they skip and neither fails, so:
 
 | Configuration | Checks |
 |---|---|
-| Bare clone: `./setup.sh` and nothing else | **1,125** |
-| Plus `requirements-unlock.txt` — what CI runs | **1,163** |
-| Plus the ITD schema in `schemas/` | **1,166** |
+| Bare clone: `./setup.sh` and nothing else | **1,130** |
+| Plus `requirements-unlock.txt` — what CI runs | **1,168** |
+| Plus the ITD schema in `schemas/` | **1,171** |
 
 CI installs the unlock extras deliberately — a proof that skips is not one — and does not
 fetch the schema, since the department's artefact is not ours to download in a workflow.
@@ -1905,6 +1905,13 @@ for t in tests/test_*.py; do .venv/bin/python "$t" || break; done
   [Where this runs](#where-this-runs), and
   [`docs/MACOS_UTILITY_TEST.md`](docs/MACOS_UTILITY_TEST.md) for the checklist that would
   close it.
+- **The platform check tests whether Windows is reachable, not whether Excel is installed.**
+  A WSL box with `powershell.exe` and `wslpath` but no Excel therefore gets past the boundary
+  and fails inside COM instead of being refused up front. A pre-flight probe would mean a
+  second COM path — its own timeouts, its own abandoned Excel processes — to gate a step that
+  can only be tested on one host, so the failure is made legible instead: the
+  `80040154 Class not registered` signature is recognised and explained as a missing Excel,
+  in the same terms the up-front refusal uses.
 
 ---
 

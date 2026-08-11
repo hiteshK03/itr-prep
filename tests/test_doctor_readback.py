@@ -761,6 +761,30 @@ def test_import_command_refuses_a_host_with_no_excel() -> None:
         check("`itr-prep import` exits 2 rather than raising", code == 2, str(code))
         check("and prints the platform explanation, not a traceback",
               "Common Offline Utility" in err.getvalue(), err.getvalue()[:200])
+
+        # host.require() gates on Windows Excel being reachable, not installed -- see the
+        # note in itrprep/host.py. A WSL box with interop and no Excel gets past it and fails
+        # inside COM instead, so the COM error has to explain itself. These run anywhere,
+        # because the thing under test is the reading of the transcript rather than COM.
+        print("\nplatform: a reachable Windows with no Excel explains itself")
+        clsid_error = (
+            "New-Object : Retrieving the COM class factory for component with CLSID "
+            "{00024500-0000-0000-C000-000000000046} failed due to the following error: "
+            "80040154 Class not registered (0x80040154 (REGDB_E_CLASSNOTREG))."
+        )
+        explained = import_to_utility.explain_no_excel("", clsid_error)
+        check("the CLSID class-not-registered error is recognised", bool(explained))
+        check("and is explained as Excel not being installed",
+              bool(explained) and "Excel does not appear to be installed" in explained,
+              (explained or "")[:120])
+        check("the explanation names the tested alternative and the macOS route",
+              bool(explained) and "Windows 11 VM" in explained
+              and "Common Offline Utility" in explained)
+        check("and says the JSON is already complete, so the run is not wasted",
+              bool(explained) and "already written and complete" in explained)
+        check("an unrelated failure is not mislabelled as a missing Excel",
+              import_to_utility.explain_no_excel(
+                  "", "the utility's ImportScheduleFA macro raised error 13") is None)
     finally:
         host.detect = original
 

@@ -16,6 +16,17 @@ choice made here: its VBA binds Windows CryptoAPI through `Declare PtrSafe ... L
 "Advapi32"` and builds Windows-only COM objects (`Scripting.Dictionary` over a thousand
 times, `MSXML2.DOMDocument`, `Scripting.FileSystemObject`), none of which exist in Excel
 for Mac. See the README's "Where this runs".
+
+**Where this boundary stops, deliberately.** `require()` gates on Windows Excel being
+*reachable*, not on Excel being *installed*. A WSL box with interop and no Excel therefore
+passes here and fails later, inside COM. That is not an oversight, but it is a real gap:
+the only way to ask whether Excel is installed is to build `Excel.Application`, which is
+the import step itself, and a pre-flight probe would add a second COM path -- with its own
+timeouts, its own zombie Excel processes and its own failure modes -- to gate a path this
+project can only test on one host. So the answer is downstream instead:
+`scripts/import_to_utility.py:explain_no_excel` recognises the `80040154 Class not
+registered` signature and turns it into the same plain explanation `explain()` gives,
+rather than leaving the reader with a raw CLSID.
 """
 
 from __future__ import annotations

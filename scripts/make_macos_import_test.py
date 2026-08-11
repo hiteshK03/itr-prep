@@ -283,6 +283,10 @@ BASE_OVERRIDES = {
     "PartA_GEN1/PersonalInfo/Address/CountryCodeMobile": 91,
     "PartA_GEN1/PersonalInfo/Address/MobileNo": 9000000000,
     "PartA_GEN1/PersonalInfo/SecondaryAdd": "N",
+    # Invented, and the one field in this block that cannot say so in its own value. The schema
+    # constrains DOB to a real date and an implausible one risks the app rejecting the base
+    # return over something unrelated to Schedule FA, so there is no equivalent of
+    # `example.invalid` or 9000000000 to reach for. It is a placeholder date, nobody's.
     "PartA_GEN1/PersonalInfo/DOB": "1985-03-02",
     "PartA_GEN1/PersonalInfo/Status": "I",
     "PartA_GEN1/FilingStatus/OptOutNewTaxRegime": "N",

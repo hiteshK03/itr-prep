@@ -1960,4 +1960,8 @@ passwords are handled. [`CHANGELOG.md`](CHANGELOG.md) records every change to a 
 position with the provision that changed it, which matters if you are filing an earlier year.
 
 Please do not open issues asking whether something is taxable, or attach real broker exports
-or account numbers to anything public.
+or account numbers to anything public. The issue templates say the same thing at the point
+where it matters, and ask you to tick that you have not — reproduce a bug against
+`tests/synthetic/` instead, which is what it is there for. If a PAN or a document password
+has already been pushed somewhere, [`SECURITY.md`](SECURITY.md) says what to do first, and
+the answer is not "delete the commit".

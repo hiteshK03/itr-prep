@@ -1,0 +1,11 @@
+# Blank issues are off deliberately. Every template below opens with the same warning about
+# real data, and a blank issue is a way past it -- on a tax tool, the moment somebody is
+# reporting a bug is exactly the moment they are tempted to paste their own return.
+blank_issues_enabled: false
+contact_links:
+  - name: A vulnerability, or data you have already published by accident
+    url: https://github.com/hiteshK03/itr-prep/blob/main/SECURITY.md
+    about: Do not open a public issue. SECURITY.md says how to report it, and what to do first if a PAN or a document password has already been pushed.
+  - name: What to check before reporting a wrong figure
+    url: https://github.com/hiteshK03/itr-prep/blob/main/README.md#read-this-first-six-things-that-will-bite-you
+    about: Six things that will bite you. --split-basis alone is a factor-of-ten error, and it is the most common cause of a figure looking wrong.

@@ -1,0 +1,64 @@
+name: A wrong claim, or a figure that has moved
+description: A statutory figure, citation or documented finding in this repository is wrong or out of date
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Never attach real data
+
+        **No PAN, no Aadhaar, no account numbers, no real holdings, quantities, prices or
+        dates** — not in the description, not in an attachment, not in a follow-up comment. An
+        issue cannot be un-published, and an edit leaves the original in the edit history.
+        Nothing about a wrong citation needs anybody's actual return in order to be reported.
+
+        ## This is the most valuable kind of issue
+
+        Everything in [`docs/VERIFIED_FINDINGS.md`](https://github.com/hiteshK03/itr-prep/blob/main/docs/VERIFIED_FINDINGS.md)
+        cites a line number so it can be checked rather than believed, and every statutory
+        figure is in `rules/AY<year>.json` with a source. If one of them is wrong, people are
+        filing on it.
+
+        One thing to check first, because it is the likeliest misunderstanding rather than a
+        bug: **AY 2026-27 is permanently an Income-tax Act, 1961 year.** The Act of 2025
+        repealed the 1961 Act on 1 April 2026, but s.536(2)(c) keeps the old Act applying to
+        earlier tax years, so a 1961-Act citation describing the AY 2026-27 filing is correct
+        and must not be renumbered. The **Black Money Act, 2015 is separate legislation** and
+        is not renumbered by any of it — section 43 is still section 43.
+        [`CONTRIBUTING.md`](https://github.com/hiteshK03/itr-prep/blob/main/CONTRIBUTING.md#which-act-to-cite) has the rule.
+  - type: checkboxes
+    id: no-real-data
+    attributes:
+      label: Before you post
+      options:
+        - label: There is no PAN, Aadhaar, account number, or real holding, quantity, price or date anywhere in this issue.
+          required: true
+  - type: input
+    id: where
+    attributes:
+      label: Where the claim is
+      description: "The file, and the line or registry key. For example: rules/AY2027-28.json, long_term_holding_months."
+    validations:
+      required: true
+  - type: textarea
+    id: what-is-wrong
+    attributes:
+      label: What it says, and what it should say
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: The primary source
+      description: >
+        The Act or Finance Act text, a CBDT notification or circular, the Gazette, or a page on
+        incometaxindia.gov.in or incometax.gov.in. ClearTax, Taxmann, TaxGuru, Quicko and
+        practitioner blogs are useful for finding a provision and are welcome in the
+        discussion, but cannot be the cited authority -- and a search-results URL is not a
+        citation, it is a promise that one exists.
+
+        If you cannot verify it, say so here rather than leaving it out. A flagged gap is
+        useful; a confident wrong figure is worse than nothing, because somebody will file
+        on it.
+    validations:
+      required: true

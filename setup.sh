@@ -33,6 +33,30 @@ fi
 echo "caching SBI TT buying rates ..."
 .venv/bin/python -m itrprep.cli fx-update
 
+# The suites run offline, but "offline" means "reads a cache", and a fresh clone has none:
+# data/ is gitignored because it is derived, and because a real user's cached tickers say
+# what they hold. So the self-check printed below used to fail five checks in
+# test_doctor_readback.py with "no daily prices for 12 ticker-year(s)" -- the FX cache was
+# warmed here and the price cache was not. Walking both synthetic datasets fills it, which
+# is what .github/workflows/tests.yml does before its own run.
+#
+# Not fatal. Prices come from a live third-party source, so a rate limit or an outage here
+# costs the self-check and the first offline run, not the tool.
+echo "caching the daily closes the self-check reads ..."
+WARM_DIR="$(mktemp -d)"
+trap 'rm -rf "$WARM_DIR"' EXIT
+if .venv/bin/python -m itrprep.cli threshold --work tests/synthetic --years 2022-2025 \
+        --out "$WARM_DIR/warm-synthetic.txt" >/dev/null 2>"$WARM_DIR/log" \
+   && .venv/bin/python -m itrprep.cli threshold --work tests/synthetic_split --years 2022-2025 \
+        --split-basis current --out "$WARM_DIR/warm-split.txt" >/dev/null 2>>"$WARM_DIR/log"; then
+    echo "cached daily closes for $(find data/prices -name '*.json' | wc -l | tr -d ' ') ticker-years"
+else
+    echo "WARNING: could not cache daily closes. The tool still works, but the self-check" >&2
+    echo "below will report missing prices, and --offline has nothing to read yet. Re-run" >&2
+    echo "./setup.sh once the network is available. What went wrong:" >&2
+    sed 's/^/  /' "$WARM_DIR/log" >&2
+fi
+
 cat <<'EOF'
 
 Setup complete.

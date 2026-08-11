@@ -149,6 +149,11 @@ All of them must pass before every commit, and all of them run offline. Add chec
 suite that already covers the area rather than starting a new file, and update the counts in
 the README's Verification section.
 
+Each suite ends with a single line beginning `All ` that says what it asserted. That is not
+decoration: CI counts those lines and fails if eight suites ran but fewer than eight asserted
+anything, which is the difference between "8 passed" and "7 passed and 1 skipped in full".
+Keep the line if you touch a suite's output.
+
 **Lint:** `ruff check .` with the configuration in `pyproject.toml`. The rule selection is
 deliberately narrow — it catches mistakes rather than imposing a style. If a rule fights the
 code for no reader benefit, argue for a per-file ignore with a comment saying why, as the

@@ -1,8 +1,30 @@
 """Negative tests: prove the schema validation actually rejects the known traps.
 
 A validator that accepts everything is worse than none, because it manufactures false
-confidence. Each case below mutates one field of a known-good row and asserts that the
-official ITD schema rejects it.
+confidence. Each case below mutates one field of a known-good row and asserts the schema
+rejects it.
+
+**Which schema, and why it matters.** These cases used to run only when the department's
+ITR-2 schema was present, and CI deliberately does not fetch it -- so the README described
+24 validation cases that no automation had ever run, and `itrprep/validate.py` was
+unexercised in CI despite containing the draft-04 selection that once caused every
+legitimately-zero rupee amount to be rejected for 2023 and 2024.
+
+So there are two schemas this can run against, and the suite says which every time:
+
+- **The official ITD schema**, if you have downloaded it. This is the only run that says
+  anything about whether the department will accept a return.
+- **`tests/fixtures/fa_contract.fixture.json`** otherwise. That file is *not* the
+  department's schema. It is a hand-written transcription of the field contract recorded in
+  `docs/VERIFIED_FINDINGS.md` sections 2, 3 and 4, which cites the VBA line numbers it was
+  read from. Running against it proves the validator has teeth -- that draft-04 is detected,
+  that the ScheduleFA subtree is re-rooted correctly, that errors surface -- and proves
+  nothing whatever about the department's acceptance.
+
+The fixture is deliberately not named `ITR-2_*Main*.json` and does not live in `schemas/`,
+so `build` cannot pick it up and report a return as validated when it is not. That is not
+left to convention: `check_fixture_is_not_discoverable` below fails if it ever becomes
+discoverable.
 
 Run:  .venv/bin/python tests/test_validation_teeth.py
 """
@@ -10,12 +32,16 @@ Run:  .venv/bin/python tests/test_validation_teeth.py
 from __future__ import annotations
 
 import copy
+import json
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from itrprep import validate
+
+_HERE = os.path.dirname(os.path.abspath(__file__))
+CONTRACT_FIXTURE = os.path.join(_HERE, "fixtures", "fa_contract.fixture.json")
 
 GOOD_A3 = {
     "CountryName": "UNITED STATES OF AMERICA",
@@ -74,14 +100,73 @@ class _Delete:
 _DELETE = _Delete()
 
 
+NOT_ITD_MARKER = "NOT THE ITD SCHEMA"
+
+
+def _is_fixture(path: str) -> bool:
+    """Does the schema at `path` declare itself a hand-written stand-in?"""
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return NOT_ITD_MARKER in str(json.load(fh).get("title", "")).upper()
+    except (OSError, ValueError):
+        return False
+
+
+def check_fixture_is_not_discoverable() -> list[str]:
+    """The fixture must never be mistakable for the department's schema.
+
+    Two ways that could go wrong, and both are checked rather than trusted: the file could be
+    renamed or moved into `schemas/` so `validate.find_schema()` returns it, and the warning
+    in its own `title` could be dropped by somebody tidying up.
+    """
+    problems = []
+    try:
+        found = validate.find_schema()
+    except validate.SchemaError:
+        found = ""
+    # Either the fixture itself became discoverable, or a copy of it did. The second is the
+    # likelier accident -- somebody drops it in schemas/ to "make validation work" -- so the
+    # test is on what the discovered file says about itself, not only on its path.
+    if found and (os.path.samefile(found, CONTRACT_FIXTURE) or _is_fixture(found)):
+        problems.append(
+            f"a hand-written contract fixture is discoverable as an ITD schema ({found}). "
+            "`build` would validate against it and report a return as checked when nothing "
+            "has checked it. Keep it out of schemas/ and out of validate.SCHEMA_GLOB."
+        )
+    if not _is_fixture(CONTRACT_FIXTURE):
+        problems.append(
+            "the contract fixture's title no longer says it is not the ITD schema. That "
+            "sentence is the only thing telling a reader who opens the file what it is."
+        )
+    return problems
+
+
 def main() -> int:
+    structural = check_fixture_is_not_discoverable()
+
     try:
         schema, schema_path = validate.load_schema()
-    except validate.SchemaError as exc:
-        print(str(exc))
-        print("\nSKIPPED: this suite validates against the real ITD schema and cannot "
-              "run without it.")
-        return 0
+    except validate.SchemaError:
+        if not os.path.exists(CONTRACT_FIXTURE):
+            # The fixture is tracked, so its absence is a broken checkout rather than a
+            # configuration a contributor can be in. Say so instead of skipping: a suite
+            # that quietly asserts nothing is the failure mode this file exists to close.
+            print(f"FAILED: {CONTRACT_FIXTURE} is missing and no ITD schema is present, so "
+                  "there is nothing to validate against.")
+            return 1
+        schema, schema_path = validate.load_schema(CONTRACT_FIXTURE)
+    # "Official" means the department's artefact, not merely that some schema was found. A
+    # copy of the fixture behind $ITRPREP_SCHEMA would otherwise be announced as the real one.
+    official = not _is_fixture(schema_path)
+    if not official:
+        print("=" * 78)
+        print("!! The official ITD schema is not present, so these cases run against")
+        print("!! tests/fixtures/fa_contract.fixture.json -- a HAND-WRITTEN transcription of")
+        print("!! docs/VERIFIED_FINDINGS.md, NOT the department's artefact. This proves the")
+        print("!! validator rejects what it should. It says nothing about whether the")
+        print("!! department will accept any return. schemas/README.md has the real one.")
+        print("=" * 78)
+        print()
     print(f"schema      : {schema_path}")
     print(f"schema draft: {validate.schema_draft(schema)}")
     print(f"validator   : "
@@ -146,7 +231,13 @@ def main() -> int:
          {"DtlsForeignEquityDebt": [GOOD_A3]}),
     ]
 
-    failures = 0
+    failures = len(structural)
+    for problem in structural:
+        print(f"STRUCTURAL FAILURE   {problem}")
+    if not structural:
+        print("ok                   the contract fixture cannot be found as an ITD schema")
+        print("ok                   and says in its own title that it is not one")
+        print()
 
     for label, instance in must_pass:
         errors = validate.validate_schedule_fa(instance, schema)
@@ -169,12 +260,14 @@ def main() -> int:
             print(f"                     -> {errors[0][:110]}")
 
     print()
-    total = len(must_pass) + len(must_fail)
+    total = len(must_pass) + len(must_fail) + 2
+    against = ("the official ITD schema" if official
+               else "the hand-written contract fixture, NOT the ITD schema")
     if failures:
-        print(f"FAILED: {failures} of {total} cases behaved wrongly")
+        print(f"FAILED: {failures} of {total} cases behaved wrongly, against {against}")
         return 1
-    print(f"All {total} validation cases behaved correctly "
-          f"({len(must_pass)} accepted, {len(must_fail)} rejected).")
+    print(f"All {total} validation cases behaved correctly against {against} "
+          f"({len(must_pass)} accepted, {len(must_fail)} rejected, 2 structural).")
     return 0
 
 

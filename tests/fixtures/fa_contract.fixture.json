@@ -1,0 +1,103 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "NOT THE ITD SCHEMA. Hand-written Schedule FA contract fixture, for tests only.",
+  "description": "This is not the Income Tax Department's ITR-2 schema and must never be used in its place. It is a hand-written transcription of the Schedule FA field contract recorded in docs/VERIFIED_FINDINGS.md sections 2, 3 and 4 -- which was established by decompiling the utility's VBA and reading the department's schema, with line numbers cited there. It exists so tests/test_validation_teeth.py can execute its negative cases in CI, where the department's artefact is deliberately not fetched. It covers only #/definitions/ScheduleFA, is a strict subset of the real schema (the country-code enum here has 5 of 249 entries), and validating a return against it proves nothing about whether the department will accept that return. It is deliberately not named ITR-2_*Main*.json and does not live in schemas/, so itrprep.validate cannot discover it; tests/test_validation_teeth.py asserts that it cannot.",
+  "definitions": {
+    "ScheduleFA": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "DtlsForeignCustodialAcc": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/DtlsForeignCustodialAcc" }
+        },
+        "DtlsForeignEquityDebtInterest": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/DtlsForeignEquityDebtInterest" }
+        }
+      }
+    },
+    "DtlsForeignEquityDebtInterest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "CountryName",
+        "CountryCodeExcludingIndia",
+        "NameOfEntity",
+        "AddressOfEntity",
+        "ZipCode",
+        "NatureOfEntity",
+        "InterestAcquiringDate",
+        "InitialValOfInvstmnt",
+        "PeakBalanceDuringPeriod",
+        "ClosingBalance",
+        "TotGrossAmtPaidCredited",
+        "TotGrossProceeds"
+      ],
+      "properties": {
+        "CountryName": { "type": "string", "minLength": 1, "maxLength": 55 },
+        "CountryCodeExcludingIndia": { "$ref": "#/definitions/CountryCodeExcludingIndia" },
+        "NameOfEntity": { "type": "string", "minLength": 1, "maxLength": 125 },
+        "AddressOfEntity": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "ZipCode": { "type": "string", "minLength": 1, "maxLength": 8 },
+        "NatureOfEntity": { "type": "string", "minLength": 1, "maxLength": 34 },
+        "InterestAcquiringDate": { "$ref": "#/definitions/DateYYYYMMDD" },
+        "InitialValOfInvstmnt": { "type": "integer" },
+        "PeakBalanceDuringPeriod": { "type": "integer" },
+        "ClosingBalance": { "type": "integer" },
+        "TotGrossAmtPaidCredited": { "type": "integer" },
+        "TotGrossProceeds": { "type": "integer" }
+      }
+    },
+    "DtlsForeignCustodialAcc": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "CountryName",
+        "CountryCodeExcludingIndia",
+        "FinancialInstName",
+        "FinancialInstAddress",
+        "ZipCode",
+        "AccountNumber",
+        "Status",
+        "AccOpenDate",
+        "PeakBalanceDuringPeriod",
+        "ClosingBalance",
+        "GrossAmtPaidCredited",
+        "NatureOfAmount"
+      ],
+      "properties": {
+        "CountryName": { "type": "string", "minLength": 1, "maxLength": 55 },
+        "CountryCodeExcludingIndia": { "$ref": "#/definitions/CountryCodeExcludingIndia" },
+        "FinancialInstName": { "type": "string", "minLength": 1 },
+        "FinancialInstAddress": { "type": "string", "minLength": 1 },
+        "ZipCode": { "type": "string", "minLength": 1, "maxLength": 8 },
+        "AccountNumber": { "type": "string", "minLength": 1 },
+        "Status": {
+          "type": "string",
+          "enum": ["OWNER", "BENEFICIAL_OWNER", "BENIFICIARY"]
+        },
+        "AccOpenDate": { "$ref": "#/definitions/DateYYYYMMDD" },
+        "PeakBalanceDuringPeriod": { "type": "integer" },
+        "ClosingBalance": { "type": "integer" },
+        "GrossAmtPaidCredited": {
+          "type": "integer",
+          "minimum": 0,
+          "exclusiveMinimum": false
+        },
+        "NatureOfAmount": {
+          "type": "string",
+          "enum": ["I", "D", "S", "O", "N"]
+        }
+      }
+    },
+    "CountryCodeExcludingIndia": {
+      "type": "string",
+      "enum": ["1", "2", "44", "1009", "1340"]
+    },
+    "DateYYYYMMDD": {
+      "type": "string",
+      "pattern": "^([12][0-9]{3}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]))$"
+    }
+  }
+}

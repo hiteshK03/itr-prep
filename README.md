@@ -1497,11 +1497,11 @@ successor at section 90(7)–(8) governs mutual fund units, so it is now in.
 
 ## Verification
 
-Eight suites, 1,164 checks, all runnable offline once the caches are warm, and all of them
+Eight suites, 1,166 checks, all runnable offline once the caches are warm, and all of them
 on macOS and Linux alike — CI runs the whole set on both:
 
 ```bash
-.venv/bin/python tests/test_validation_teeth.py        # 24 cases
+.venv/bin/python tests/test_validation_teeth.py        # 26 cases
 .venv/bin/python tests/test_pipeline.py                # 80 checks
 .venv/bin/python tests/test_splits_cash_threshold.py   # 67 checks
 .venv/bin/python tests/test_doctor_readback.py         # 96 checks
@@ -1523,31 +1523,66 @@ mutual fund trap is deleted or hollowed out. And the other-schedules summary is 
 to name the form, rule and deadline the registry gives — Form 67 and rule 128(9) for
 AY 2026-27, and no repealed provision at all for AY 2027-28.
 
-**That is the count with everything present**, and two of the eight suites need something a
-bare clone does not have. Without the ITD schema in `schemas/`, `test_validation_teeth.py`
-skips in full and `test_pipeline.py` drops three schema-dependent checks; without the optional
-unlock extras, `test_unlock_credentials.py` skips its 38 encrypted round-trip checks. All three
-say so when they skip, none of them fails, and a bare clone therefore sees 8 suites and 1,099
-checks pass. CI installs the unlock extras deliberately — a proof that skips is not one — and
-does not fetch the schema, since the department's artefact is not ours to download in a
-workflow.
+**That is the count with everything present**, and what a bare clone lacks changes two of the
+numbers above. Without the optional unlock extras, `test_unlock_credentials.py` skips its 38
+encrypted round-trip checks; without the ITD schema in `schemas/`, `test_pipeline.py` drops
+three schema-dependent checks. Both say so when they skip and neither fails, so:
 
-"Offline" means "reads a cache", and a fresh clone has none — `data/` is gitignored. Run
-`itr-prep fx-update` and one `itr-prep threshold` over each synthetic dataset first, which is
-what CI does.
+| Configuration | Checks |
+|---|---|
+| Bare clone: `./setup.sh` and nothing else | **1,125** |
+| Plus `requirements-unlock.txt` — what CI runs | **1,163** |
+| Plus the ITD schema in `schemas/` | **1,166** |
+
+CI installs the unlock extras deliberately — a proof that skips is not one — and does not
+fetch the schema, since the department's artefact is not ours to download in a workflow.
+
+"Offline" means "reads a cache", and a fresh clone has none — `data/` is gitignored, because
+it is derived and because a real user's cached tickers would say what they hold. `./setup.sh`
+warms both caches for you, and CI does the same before its own run. If you skipped `setup.sh`,
+run `itr-prep fx-update` and one `itr-prep threshold` over each synthetic dataset first.
 
 **`test_validation_teeth.py`** proves the schema validation actually rejects things. It
-mutates a known-good row one field at a time and asserts the official ITD schema refuses
-it: `BENIFICIARY` spelled correctly, an integer country code, a float rupee amount, a
+mutates a known-good row one field at a time and asserts the schema refuses it:
+`BENIFICIARY` spelled correctly, an integer country code, a float rupee amount, a
 `DD/MM/YYYY` date, a missing required field, an extra field, an over-length string, an
-out-of-enum nature code. All 24 cases behave correctly.
+out-of-enum nature code. All 26 cases behave correctly.
+
+**Which schema, and the honest version of what this proves.** These cases used to run only
+when you had downloaded the department's schema, and CI deliberately does not fetch it — so
+this README described validation cases that no automation had ever run, on the one module
+whose bug history is worst. They now run in CI against
+[`tests/fixtures/fa_contract.fixture.json`](tests/fixtures/fa_contract.fixture.json), which
+is **not the department's schema and must never be used as one.** It is a hand-written
+transcription of the field contract in
+[`docs/VERIFIED_FINDINGS.md`](docs/VERIFIED_FINDINGS.md) §2–§4, which cites the VBA line
+numbers it was read from, and it is a strict subset — the country-code enum has 5 of the
+department's 249 entries.
+
+So be precise about what each run buys:
+
+- **Against the fixture** (a bare clone, and CI): the validator has teeth. draft-04 is
+  detected from the schema's own declaration, the ScheduleFA subtree is re-rooted correctly,
+  every documented trap is rejected and every legitimate value is accepted. It says **nothing
+  about whether the department will accept your return.**
+- **Against the ITD schema** (once you download it): the above, plus the only statement that
+  matters at filing time.
+
+The suite names which one it used in its own summary line, and prints an unmissable banner
+when it is the fixture. Two of its 26 cases exist to keep that honest: the fixture is not
+named `ITR-2_*Main*.json` and does not live in `schemas/`, so `build` cannot discover it and
+report a return as validated when nothing has validated it — and the suite fails if that ever
+stops being true, including if somebody copies the fixture into `schemas/` to make validation
+"work".
 
 A subtle one it also covers: **the ITD schema is draft-04, not draft-07.** It declares
 `http://json-schema.org/draft-04/schema#` and uses draft-04's boolean form of
 `exclusiveMinimum` in 659 places. A draft-07 validator reads `"exclusiveMinimum": false` as
 "must exceed 0" and wrongly rejects every legitimately-zero amount — which is exactly what
 happened for 2023 and 2024 before this was found. The validator is chosen from the
-schema's own declaration.
+schema's own declaration. The contract fixture reproduces that declaration and the boolean
+form, so the case that used to fail — a Table A2 account with nothing credited all year — is
+now asserted in CI rather than only on a machine that happens to have the real schema.
 
 **`test_pipeline.py`** runs the synthetic dataset (`tests/synthetic/`) through the whole
 pipeline for 2023, 2024 and 2025. It covers multiple lots per ticker, a mid-year sale of an

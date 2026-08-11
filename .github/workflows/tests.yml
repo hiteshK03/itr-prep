@@ -67,10 +67,22 @@ jobs:
         run: |
           status=0
           ran=0
+          asserted=0
           for t in tests/test_*.py; do
             echo "::group::$t"
-            python "$t" || status=1
+            if python "$t" > "$RUNNER_TEMP/suite.out" 2>&1; then :; else status=1; fi
+            cat "$RUNNER_TEMP/suite.out"
             ran=$((ran + 1))
+            # Counting files that ran cannot tell "8 passed" from "7 passed and 1 did
+            # nothing": a suite that skips in full exits 0 and looks identical. Every suite
+            # ends with a single `All ... ` line summarising what it asserted, and a suite
+            # that skipped never prints one. That is the difference this checks.
+            if grep -qE '^All ' "$RUNNER_TEMP/suite.out"; then
+              asserted=$((asserted + 1))
+            else
+              echo "::error::$t exited without a summary line, so it asserted nothing"
+              status=1
+            fi
             echo "::endgroup::"
           done
           # A suite that is absent from the checkout passes vacuously, which is how
@@ -78,6 +90,10 @@ jobs:
           # `*_credentials*` line in .gitignore and was never committed. Count them.
           if [ "$ran" -ne 8 ]; then
             echo "::error::expected 8 suites, ran $ran -- one is missing from the checkout"
+            exit 1
+          fi
+          if [ "$asserted" -ne 8 ]; then
+            echo "::error::8 suites ran but only $asserted asserted anything"
             exit 1
           fi
           exit $status

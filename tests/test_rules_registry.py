@@ -7,6 +7,9 @@ suite is the enforcement half of `rules/AY<year>.json`:
   - every entry in EVERY registry cites an official source, and cites nothing else
   - every entry declares whether it is `stable` or `annual`, consistently with the
     assessment year it is stated for
+  - every entry declares how much code stands behind it, and the declaration is true:
+    a key tagged `read_by_code` is referenced under `itrprep/`, and a key tagged
+    otherwise is not
   - no `annual` entry has been left behind by the registry it lives in
   - the loader refuses to run ahead of the registry, and says so when it runs behind
   - the figures the code actually computes with are the figures in the registry
@@ -95,6 +98,19 @@ REQUIRED_TRAPS = {
     ),
 }
 
+# The shape of a registry entry, minus whatever the caller is probing. Used only to build
+# deliberately broken entries in memory; nothing here is a real figure.
+_MINIMAL_ENTRY = {
+    "value": 1,
+    "review": rules.REVIEW_STABLE,
+    "code_status": rules.CODE_NOT_READ,
+    "applies_to": rules.APPLIES_TO_ALL,
+    "verified_on": "2026-01-01",
+    "statute": "not a real provision",
+    "check": "nothing; this entry exists only inside a test",
+    "sources": [],
+}
+
 failures: list[str] = []
 
 
@@ -116,6 +132,17 @@ def _is_iso_date(value: str) -> bool:
     except (ValueError, TypeError):
         return False
     return True
+
+
+def _package_text() -> str:
+    """Every line of Python under `itrprep/`, concatenated, for the code_status drift check."""
+    package = os.path.join(ROOT, "itrprep")
+    chunks = []
+    for name in sorted(os.listdir(package)):
+        if name.endswith(".py"):
+            with open(os.path.join(package, name), encoding="utf-8") as fh:
+                chunks.append(fh.read())
+    return "\n".join(chunks)
 
 
 def _raw_entries(path: str) -> dict:
@@ -233,6 +260,78 @@ def main() -> int:
             if entry.contested:
                 check(f"{label} {key}: a contested entry explains the disagreement",
                       "CONTESTED" in entry.check.upper(), entry.check[:80])
+
+    # --------------------------------------------------------- code status
+    # What led the author to believe mutual funds were implemented: `itr-prep rules` printed
+    # the mutual-fund research in the same shape, with the same citations and the same
+    # re-check instruction, as the two figures the arithmetic actually reads. So every entry
+    # now declares whether any code stands behind it -- and this is what stops that
+    # declaration rotting, by grepping the package for each key.
+    #
+    # The grep is deliberately crude: a key name appearing anywhere under `itrprep/` counts
+    # as a reference. It cannot tell a read from a mention in a docstring, and it is not
+    # trying to. Drift is what it catches, and a docstring that names an inert key is itself
+    # worth a second look.
+    print("\n[code status]")
+    package_text = _package_text()
+    for label, loaded in sorted(all_registries.items()):
+        for key, entry in sorted(loaded.entries.items()):
+            tag = f"{label} {key}"
+            check(f"{tag}: declares a known code_status",
+                  entry.code_status in rules.CODE_STATUSES, entry.code_status)
+            if entry.reads_the_registry:
+                check(f"{tag}: tagged read_by_code, and the package does read it",
+                      key in package_text,
+                      "no file under itrprep/ names this key; retag it or wire it up")
+            else:
+                check(f"{tag}: tagged {entry.code_status}, and nothing under itrprep/ "
+                      f"names it",
+                      key not in package_text,
+                      "the code now references it, so the tag is stale")
+        grouped = loaded.by_code_status()
+        check(f"{label}: every entry falls in exactly one code_status group",
+              sum(len(group) for _, group in grouped) == len(loaded.entries),
+              str([(status, len(group)) for status, group in grouped]))
+        check(f"{label}: the groups are ordered most-implemented first",
+              [status for status, _ in grouped] == list(rules.CODE_STATUSES))
+        by_status = dict(grouped)
+        print("  note  " + label + ": " + ", ".join(
+            f"{len(by_status[s])} {s}" for s in rules.CODE_STATUSES))
+        check(f"{label}: the figures the arithmetic reads are a small minority",
+              0 < len(by_status[rules.CODE_READ]) < len(loaded.entries) / 2,
+              f"{len(by_status[rules.CODE_READ])} of {len(loaded.entries)}")
+
+    # The mutual-fund block is the whole reason this field exists. It must never be tagged
+    # as anything a reader could mistake for behaviour.
+    if mutual_funds := all_registries.get("2027-28"):
+        mf = [e for k, e in sorted(mutual_funds.entries.items())
+              if k.startswith(("mf_", "specified_mf_"))]
+        check("every mutual-fund entry is tagged research_only",
+              bool(mf) and all(e.code_status == rules.CODE_RESEARCH for e in mf),
+              str([(e.key, e.code_status) for e in mf
+                   if e.code_status != rules.CODE_RESEARCH]))
+        check("and none of them is read by anything",
+              all(e.key not in package_text for e in mf))
+
+    # An entry with no code_status at all must not load. Silence would default to whatever
+    # the reader assumed, which is the failure this field exists to prevent.
+    for bad in (None, "implemented", ""):
+        body = dict(_MINIMAL_ENTRY)
+        if bad is None:
+            del body["code_status"]
+        else:
+            body["code_status"] = bad
+        label_bad = "<absent>" if bad is None else repr(bad)
+        try:
+            rules.Rules("<in memory>", {
+                "assessment_year": "2027-28", "entries": {"probe": body},
+            })
+            check(f"an entry with code_status {label_bad} is refused",
+                  False, "no error raised")
+        except rules.RulesError as exc:
+            check(f"an entry with code_status {label_bad} is refused", True)
+            check(f"  and the refusal for {label_bad} lists the classes it accepts",
+                  all(s in str(exc) for s in rules.CODE_STATUSES), str(exc)[:200])
 
     # ------------------------------------------------------------ staleness
     # A registry must not have rotted against its own assessment year. This is what fails

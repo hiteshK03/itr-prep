@@ -13,6 +13,30 @@ notification changed it, because they may be filing an earlier year.
 
 ### Added
 
+- **`code_status` on every registry entry, and `itr-prep rules` groups its output by it.**
+  The command printed all forty entries across the two registries identically — same value,
+  same authority, same sources, same re-check instruction — with no signal about which ones any
+  code reads. That is what led the author of this tool to believe the mutual-fund support was
+  implemented; it is not, and a public reader would have drawn the same conclusion. Each entry
+  now declares one of four classes: `read_by_code` (4 per registry — the Black Money Act relief
+  threshold and section 43 penalty read by `threshold`, the foreign-share holding period read
+  by `positions` and `cli`, and the foreign tax credit deadline read by `emit`),
+  `hardcoded_at_call_site` (6 — true statements about the code's behaviour that the code does
+  not read, so editing them changes nothing), `not_read` (2 — `revised_return_deadline` and
+  `schedule_fa_reporting_period`, recorded gaps rather than behaviour) and `research_only`
+  (16, AY 2027-28 only — the whole mutual-fund and capital-gains-rate block). The loader
+  refuses an entry with no `code_status`, and `tests/test_rules_registry.py` greps `itrprep/`
+  for every key and fails if a `read_by_code` entry is not referenced there or if any other
+  class is. The audit that produced this split counted seven `hardcoded_at_call_site` keys; it
+  is six per registry, because `income_fx_convention_rule_115` and
+  `income_fx_convention_specified_date` are the same entry either side of the Act change.
+
+- **`--allow-indian-securities`**, following the `--allow-dropped-rows` idiom, accepted by
+  `doctor`, `build`, `threshold` and `run` for the case where a genuinely foreign security
+  trips the new scope guard. It turns the check off for every flagged row rather than for the
+  one the user had in mind, and says so. With it, `doctor` downgrades the refusal to a warning
+  that names what is being let through.
+
 - **`rules/AY2027-28.json` — the first registry under a different Act.** The Income-tax Act,
   2025 (No. 30 of 2025, assented 21 August 2025) came into force on 1 April 2026 by its
   section 1(3) and repealed the Income-tax Act, 1961 by its section 536(1), so **FY 2026-27
@@ -158,6 +182,44 @@ notification changed it, because they may be filing an earlier year.
   3.10 to 3.13 with a guard against committed personal data.
 
 ### Fixed
+
+- **An Indian security in `transactions.csv` was disclosed in Schedule FA. It is now refused.**
+  The README has said since the first commit that Indian mutual funds are out of scope, and
+  nothing enforced it: put one in the ledger and the pipeline treated it as a foreign equity in
+  a foreign custodial account and emitted it in Table A2 and Table A3. No error, no warning, a
+  complete and plausible-looking return **asserting a foreign asset the filer does not hold**.
+  Schedule FA discloses assets located outside India — the department's own field is named
+  `CountryCodeExcludingIndia` and its enum has no code for India at all — so this was a wrong
+  filing produced silently.
+
+  The refusal generalises past mutual funds, because an Indian *equity* in Schedule FA is
+  equally wrong and ISINs separate them cleanly: `INE` is an Indian company's share and `INF`
+  an Indian mutual fund scheme. `itrprep/scope.py` is the one place the policy lives, and it
+  keys on structural signals only — an ISIN whose ISO-3166 country prefix is `IN`, an
+  INR-denominated row, an NSE or BSE venue suffix on the ticker, and an issuer whose country is
+  `INDIA`. It deliberately does **not** read scheme names: "Fund", "Growth", "Direct Plan" and
+  "IDCW" all appear in the names of legitimate foreign holdings, `IVV` is an iShares ETF in this
+  repository's own fixtures, and a guard that broke the correct case to catch more of the
+  incorrect one would be the worse guard.
+
+  Enforced at preflight in `doctor` and independently in `intermediate.cross_check`, which
+  `build` and `threshold` both call — so skipping `doctor` does not get past it, and `run`
+  surfaces it at its first stage. It refuses rather than warning, in the same way this codebase
+  already refuses an unrecognisable broker export and an unresolved stock split; a warning on a
+  path whose consequence is a wrong filing would be out of character and gets scrolled past.
+  The message says what was detected and on which row, why an Indian asset cannot go in
+  Schedule FA, that this tool does not handle Indian mutual funds or Indian capital gains at
+  all and so has nothing better to offer those rows, what to do instead, and what the check
+  cannot see.
+
+  **What it cannot see is stated in the refusal itself.** All four signals depend on data the
+  tool does not produce: `isin` and `currency` are new optional hand-entered columns, no
+  supported broker export carries an ISIN, and the venue suffix depends on how the user typed
+  the ticker. An Indian holding entered as a bare ticker with none of them is still valued and
+  disclosed. [`docs/KNOWN-ISSUES.md`](docs/KNOWN-ISSUES.md) issue 6 records that gap and what
+  would actually close it — a required per-ticker domicile declaration, refused if absent, in
+  the way `--split-basis` is demanded rather than guessed — which is a change to the input
+  contract and not made incidentally here.
 
 - **Corrected what Form No. 45 is for, in four places.** The registry, the README,
   [`docs/ANNUAL-REVIEW.md`](docs/ANNUAL-REVIEW.md) and this changelog all described the new

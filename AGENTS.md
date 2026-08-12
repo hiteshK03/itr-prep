@@ -141,6 +141,22 @@ keep than to re-derive. **No code reads them and no pipeline computes them.** Th
 research committed in a form a test can check, not a feature. Building the pipeline is still
 a scope decision that has not been taken.
 
+Every registry entry now says which of those it is, in a `code_status` field that
+`itr-prep rules` groups its output by: `read_by_code`, `hardcoded_at_call_site`, `not_read` or
+`research_only`. Only four entries per registry are `read_by_code`. If you add an entry, tag it
+honestly; if you wire an inert one up, retag it. `tests/test_rules_registry.py` greps
+`itrprep/` for every key and fails either way round, so an optimistic tag does not survive a
+commit.
+
+The narrow scope is now **enforced at runtime, not just stated here.** An Indian mutual fund or
+Indian equity in `transactions.csv` is refused by `doctor`, `build`, `threshold` and `run` —
+see `itrprep/scope.py`, which is the one place the policy lives. It keys on structural signals
+only (an `IN`-prefixed ISIN, an INR row, an NSE or BSE ticker suffix, an issuer whose country is
+`INDIA`) and deliberately not on scheme names, because foreign funds and ETFs belong in
+Schedule FA and must keep working. Do not add a name-based signal without reading
+`docs/KNOWN-ISSUES.md` issue 6 first: it records why that was rejected and what would actually
+close the gap.
+
 ## Tests
 
 Eight suites, plain scripts rather than pytest, all runnable offline and all of which must

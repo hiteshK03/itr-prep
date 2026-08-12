@@ -3,6 +3,7 @@
   "_purpose": "Every statutory figure, date and convention this tool relies on, for ONE assessment year, each one cited to an official source. Code reads values from here and never from memory. A value that is not in this file, with a source, is a value the tool has no business asserting.",
   "_source_policy": "Primary sources only, in this order: the Income-tax Act or the Finance Act text, a CBDT notification or circular, then incometaxindia.gov.in or incometax.gov.in. Secondary aggregators -- ClearTax, Taxmann, TaxGuru, practitioner blogs -- may be used to FIND a provision and may be quoted in prose, but must never be the cited authority for a rate, a limit or a date. tests/test_rules_registry.py enforces the domain rule.",
   "_review_classes": "stable = fixed by statute and not expected to move; a historical date or a settled convention. annual = set or revised by a Finance Act, or otherwise dependent on the assessment year. Every 'annual' entry must be re-verified before this registry is used for a later assessment year -- see docs/ANNUAL-REVIEW.md.",
+  "_code_status_values": "How much of the code stands behind an entry, so that a reader of `itr-prep rules` can tell implemented behaviour from captured research. read_by_code = computing code reads this value out of the registry. hardcoded_at_call_site = the entry describes what the code really does, but the code does not read the entry to do it. not_read = nothing reads it and nothing acts on it; a latent gap recorded deliberately rather than deleted. research_only = cited law with no code behind it at all. tests/test_rules_registry.py greps itrprep/ for every key and fails if a read_by_code key is referenced nowhere, or if a key in any other class is referenced there.",
 
   "assessment_year": "2026-27",
   "financial_year": "2025-26",
@@ -12,6 +13,7 @@
   "entries": {
     "schedule_fa_reporting_basis": {
       "value": "calendar_year",
+      "code_status": "hardcoded_at_call_site",
       "review": "stable",
       "applies_to": "all",
       "verified_on": "2026-08-03",
@@ -31,6 +33,7 @@
 
     "schedule_fa_reporting_period": {
       "value": {"start": "2025-01-01", "end": "2025-12-31"},
+      "code_status": "not_read",
       "review": "annual",
       "applies_to": "2026-27",
       "verified_on": "2026-08-03",
@@ -50,6 +53,7 @@
 
     "schedule_fa_fx_convention": {
       "value": "sbi_tt_buying_rate_on_the_relevant_date",
+      "code_status": "hardcoded_at_call_site",
       "review": "stable",
       "applies_to": "all",
       "verified_on": "2026-08-03",
@@ -65,6 +69,7 @@
 
     "income_fx_convention_rule_115": {
       "value": "last_day_of_the_month_immediately_preceding",
+      "code_status": "hardcoded_at_call_site",
       "review": "stable",
       "applies_to": "all",
       "verified_on": "2026-08-03",
@@ -80,6 +85,7 @@
 
     "equity_perquisite_cost_of_acquisition": {
       "value": "fair_market_value_charged_to_perquisite",
+      "code_status": "hardcoded_at_call_site",
       "review": "stable",
       "applies_to": "all",
       "verified_on": "2026-08-03",
@@ -95,6 +101,7 @@
 
     "transfer_expenditure_deductible": {
       "value": true,
+      "code_status": "hardcoded_at_call_site",
       "review": "stable",
       "applies_to": "all",
       "verified_on": "2026-08-03",
@@ -110,6 +117,7 @@
 
     "schedule_fa_disclosure_unconditional": {
       "value": true,
+      "code_status": "hardcoded_at_call_site",
       "review": "stable",
       "applies_to": "all",
       "verified_on": "2026-08-03",
@@ -129,6 +137,7 @@
 
     "foreign_share_long_term_holding": {
       "value": {"months": 24, "days": 730},
+      "code_status": "read_by_code",
       "review": "annual",
       "applies_to": "2026-27",
       "verified_on": "2026-08-03",
@@ -145,6 +154,7 @@
     "black_money_s43_penalty_inr": {
       "value": 1000000,
       "unit": "INR",
+      "code_status": "read_by_code",
       "review": "annual",
       "applies_to": "2026-27",
       "verified_on": "2026-08-03",
@@ -165,6 +175,7 @@
     "black_money_relief_threshold_inr": {
       "value": 2000000,
       "unit": "INR",
+      "code_status": "read_by_code",
       "review": "annual",
       "applies_to": "2026-27",
       "verified_on": "2026-08-03",
@@ -191,6 +202,7 @@
         "conditional_on": "the return for the assessment year being furnished within the time specified under section 139(1) or section 139(4)",
         "updated_return_basis": "on or before the date the section 139(8A) return is furnished"
       },
+      "code_status": "read_by_code",
       "review": "annual",
       "applies_to": "2026-27",
       "verified_on": "2026-08-03",
@@ -214,6 +226,7 @@
 
     "revised_return_deadline": {
       "value": {"date": "2027-03-31", "section": "139(5)"},
+      "code_status": "not_read",
       "review": "annual",
       "applies_to": "2026-27",
       "verified_on": "2026-08-03",

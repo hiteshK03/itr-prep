@@ -13,11 +13,13 @@ import datetime as dt
 import os
 from decimal import Decimal, InvalidOperation
 
+from . import scope
 from .models import (
     ACCOUNT_COLUMNS,
     ACQ_KINDS,
     DISPOSAL_KINDS,
     ISSUER_COLUMNS,
+    OPTIONAL_SECURITY_COLUMNS,
     TRANSACTION_COLUMNS,
     TXN_DIVIDEND,
     TXN_SELL,
@@ -169,6 +171,8 @@ def read_transactions(path: str) -> list[Transaction]:
                     disposal_kind=disposal_kind,
                     lot_id=(row.get("lot_id") or "").strip(),
                     notes=(row.get("notes") or "").strip(),
+                    isin=(row.get("isin") or "").strip().upper(),
+                    currency=(row.get("currency") or "").strip().upper(),
                     source_row=lineno,
                     source_file=path,
                 )
@@ -216,6 +220,7 @@ def read_issuers(path: str) -> dict[str, Issuer]:
                 entity_nature=row["entity_nature"],
                 country_code=row.get("country_code") or "2",
                 country_name=row.get("country_name") or "UNITED STATES OF AMERICA",
+                isin=row.get("isin", "").upper(),
             )
     if not out:
         raise DataError(f"{path}: no issuer rows found")
@@ -347,8 +352,15 @@ def read_cash_balances(path: str) -> dict[tuple[str, int], CashBalance]:
     return out
 
 
-def cross_check(transactions, issuers, accounts) -> None:
-    """Catch dangling references before any expensive price fetching happens."""
+def cross_check(
+    transactions, issuers, accounts, allow_indian_securities: bool = False
+) -> None:
+    """Catch dangling references, and Indian securities, before anything is computed.
+
+    This is the validation `build` and `threshold` share, which is why the scope guard lives
+    here as well as in `doctor`. Preflight is where a user should learn about an Indian
+    security, but `doctor` can be skipped and a build must not be bypassable.
+    """
     missing_issuers = sorted({t.ticker for t in transactions} - set(issuers))
     if missing_issuers:
         raise DataError(
@@ -364,6 +376,10 @@ def cross_check(transactions, issuers, accounts) -> None:
             "These account_ids appear in transactions.csv but have no row in "
             "accounts.csv: " + ", ".join(missing_accounts)
         )
+    if not allow_indian_securities:
+        hits = scope.find_indian_securities(transactions, issuers)
+        if hits:
+            raise DataError(scope.refusal(hits))
 
 
 def write_template(path: str, columns: list[str], example_rows: list[dict]) -> None:
@@ -383,12 +399,17 @@ def write_transactions(path: str, transactions: list[Transaction]) -> None:
     vest) alongside the required columns even though all three are optional on read -- new
     output should carry them when a broker export has them, without breaking older
     hand-filled files that predate any of them.
+
+    `isin` and `currency` ride along for a sharper reason: `normalize --append` and `run`'s
+    stage 2 both re-read this file and write it back, keeping the rows for accounts they did
+    not touch. A column dropped on the way through would silently disarm the scope guard on
+    exactly the hand-entered row it exists to catch.
     """
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     fieldnames = (TRANSACTION_COLUMNS[:6] + ["paid_price_usd"]
                   + TRANSACTION_COLUMNS[6:8] + ["expense_usd"]
                   + TRANSACTION_COLUMNS[8:9] + ["disposal_kind"]
-                  + TRANSACTION_COLUMNS[9:])
+                  + TRANSACTION_COLUMNS[9:] + OPTIONAL_SECURITY_COLUMNS)
     with open(path, "w", newline="", encoding="utf-8") as fh:
         writer = csv.DictWriter(fh, fieldnames=fieldnames)
         writer.writeheader()
@@ -412,6 +433,8 @@ def write_transactions(path: str, transactions: list[Transaction]) -> None:
                 "disposal_kind": t.disposal_kind,
                 "lot_id": t.lot_id,
                 "notes": t.notes,
+                "isin": t.isin,
+                "currency": t.currency,
             })
 
 

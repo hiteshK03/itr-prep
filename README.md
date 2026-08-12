@@ -12,6 +12,11 @@ deductions. The name is deliberately broader than the tool, because the directio
 wider — but the direction is not the product. [Roadmap](#roadmap) says what is intended, and
 says plainly that none of it exists yet.
 
+Indian mutual funds and Indian equities are not merely unsupported: putting one in
+`transactions.csv` is now **refused**, because the alternative was disclosing an Indian asset
+in Schedule FA and producing a wrong return with no warning at all. See
+[Indian securities are refused](#indian-securities-are-refused).
+
 ## Quickstart
 
 ```bash
@@ -71,12 +76,14 @@ before you file on any of it — `--split-basis` alone is a factor-of-ten error 
   - [Exchange rates — SBI TT buying rate, per date](#exchange-rates--sbi-tt-buying-rate-per-date)
   - [Peak value — the interpretive part](#peak-value--the-interpretive-part)
   - [Stock splits: the build stops rather than guess](#stock-splits-the-build-stops-rather-than-guess)
+  - [Indian securities are refused](#indian-securities-are-refused)
   - [Dividends across lots](#dividends-across-lots)
 - [Table A2: do you need the custodial-account rows?](#table-a2-do-you-need-the-custodial-account-rows)
   - [Cash balances — `cash_balances.csv`](#cash-balances--cash_balancescsv)
 - [Prior years: AY 2024-25 and AY 2025-26](#prior-years-ay-2024-25-and-ay-2025-26)
 - [Schedule CG, OS, FSI, TR and the foreign tax credit statement](#schedule-cg-os-fsi-tr-and-the-foreign-tax-credit-statement)
 - [Where every statutory figure comes from](#where-every-statutory-figure-comes-from)
+  - [The registry is not a feature list](#the-registry-is-not-a-feature-list)
   - [AY 2027-28 is a change of statute, not a refresh](#ay-2027-28-is-a-change-of-statute-not-a-refresh)
 - [Verification](#verification)
   - [The Excel round-trip, live, on all three utilities](#the-excel-round-trip-live-on-all-three-utilities)
@@ -779,7 +786,10 @@ Errors, which block a build:
 - a ticker with no `issuers.csv` row, or an `account_id` with no `accounts.csv` row;
 - a `SELL` with no shares to sell;
 - an acquisition or sale with a zero price — that is the cost basis;
-- an FX cache that does not cover the years asked for.
+- an FX cache that does not cover the years asked for;
+- an **Indian security**, which Schedule FA cannot disclose at all — see
+  [Indian securities are refused](#indian-securities-are-refused). `build` and `threshold`
+  refuse it independently, so skipping `doctor` does not get past it.
 
 Warnings, which do not block but each cost you something real:
 
@@ -965,6 +975,8 @@ One row per acquisition, disposal or dividend. All amounts in **USD**.
 | `disposal_kind` | no | `SELL` rows only. `TAX_WITHHOLDING` marks shares the employer kept at vest to pay withholding tax (a "sell to cover"). Such a disposal is matched to the lot created by the vest on that **same date**, never FIFO — E\*TRADE stamps one grant number on every vest of an award, so `lot_id` alone would let an older vest absorb it and put both lots' quantity and cost basis wrong |
 | `lot_id` | no | Groups an acquisition. On a `SELL`, names which lot was sold. Blank means FIFO |
 | `notes` | no | Free text, carried to the audit CSV |
+| `isin` | no | The security's ISIN, if you have it. Nothing computes from it; it is read only by the scope guard, which refuses an `IN`-prefixed one. See [Indian securities are refused](#indian-securities-are-refused) |
+| `currency` | no | The currency the row is denominated in. Every money column here is USD by definition, so this exists only so that an `INR` row can be caught rather than valued |
 
 Include **every acquisition ever made** that you still held during any year you report,
 even from years before the one you are filing. Table A3 needs the original acquisition date
@@ -1021,9 +1033,14 @@ not your broker.
 | `entity_nature` | yes | e.g. `Listed Company`, `Exchange Traded Fund` | 34 |
 | `country_code` | no | Defaults `2` (USA). Must be a code from the ITD list | |
 | `country_name` | no | Defaults `UNITED STATES OF AMERICA` | 55 |
+| `isin` | no | The issuer's ISIN, if you have it. Read only by the scope guard | |
 
 Over-length values are an error, not silently truncated, so the filed data always matches
 your source.
+
+`country_name` of `INDIA` is refused rather than filed: Schedule FA has no country code for
+India, so an issuer row saying so is either an Indian security or a wrong country, and both
+are worth stopping.
 
 ### `accounts.csv`
 
@@ -1197,6 +1214,63 @@ split with the one in your CSV. If they match, you are on `current`.
 The choice is echoed on every successful run and every restated row is marked in the audit
 CSV, so an adjustment is never silent either. CSCO, JNJ and IVV had no splits in 2022-2025;
 AVGO is the live one.
+
+### Indian securities are refused
+
+The scope note at the top of this README has always said Indian mutual funds are not covered,
+and for twenty commits nothing enforced it. Put one in `transactions.csv` and the pipeline
+treated it as a foreign equity in a foreign custodial account and disclosed it in Schedule FA:
+no error, no warning, a complete and plausible-looking return asserting a foreign asset the
+filer does not hold. The author of this tool believed for a while that mutual funds were
+supported, which is the clearest evidence available that somebody else will make the same
+mistake.
+
+So an Indian security is now refused. `doctor`, `build`, `threshold` and `run` all stop:
+
+```
+1 holding in this ledger looks like an INDIAN security,
+which Schedule FA cannot disclose.
+
+  SYNTHMF
+      ISIN INF999Z01ZZ9 is issued under India's ISIN prefix IN, and INF is an Indian mutual fund scheme
+        read from transactions.csv:26
+...
+If one of these is genuinely a FOREIGN security that trips the check,
+re-run with --allow-indian-securities.
+```
+
+This generalises past mutual funds. An Indian *equity* in Schedule FA is equally wrong, and
+ISINs separate the two cleanly: `INE` is an Indian company's share, `INF` an Indian mutual fund
+scheme. Both are Indian assets wherever they are held, so neither belongs in Table A2 or
+Table A3 — and the department's own field is named `CountryCodeExcludingIndia`, whose enum has
+no code for India at all.
+
+**What it keys on.** Structural signals only, because foreign-domiciled funds and ETFs
+legitimately belong in Schedule FA and must keep working — `IVV` is an iShares ETF and is in
+the synthetic fixtures:
+
+| Signal | Read from |
+|---|---|
+| An ISIN whose ISO-3166 country prefix is `IN`, twelve alphanumeric characters | the optional `isin` column of `transactions.csv`, or of `issuers.csv` |
+| An INR-denominated row | the optional `currency` column of `transactions.csv` |
+| An NSE or BSE venue suffix — `.NS`, `.NSE`, `.BO`, `.BSE` | the ticker |
+| An issuer whose country is `INDIA` | `issuers.csv` |
+
+It deliberately does **not** read scheme names. "Fund", "Growth", "Direct Plan" and "IDCW" all
+appear in the names of legitimate foreign holdings, and matching on them would break the demo
+while catching nothing structural.
+
+**What it cannot see.** ISIN is absent from many broker exports, and neither `isin` nor
+`currency` is a column anything in this tool produces — both are optional and hand-entered. An
+Indian holding entered as a bare ticker with no ISIN and no currency **will not be caught.**
+The refusal says so itself rather than only saying it here, because the person who needs to
+know is the person being refused — or, worse, the person who is not. This lowers the chance of
+the mistake; it does not move the responsibility for what you file.
+
+**The escape hatch**, following the `--allow-dropped-rows` idiom, is
+`--allow-indian-securities`. It is accepted by `doctor`, `build`, `threshold` and `run`, and it
+turns the check off for every flagged row rather than for the one you had in mind. With it,
+`doctor` downgrades the refusal to a warning that names what is being let through.
 
 ### Dividends across lots
 
@@ -1397,11 +1471,10 @@ does not automatically carry to rule 76; treat the deadline as real.
 ## Where every statutory figure comes from
 
 Every rate, limit, threshold, deadline and conversion convention this tool relies on lives
-in `rules/AY<year>.json`, each with an official citation. Code reads them from there.
-Nothing is computed from memory and nothing is hardcoded at a call site — because the
-figures that matter here have already moved: the Black Money Act relief threshold replaced
-an earlier ₹5 lakh bank-balance carve-out in 2024, the foreign tax credit deadline was
-rewritten in 2022, and then the whole Act was replaced.
+in `rules/AY<year>.json`, each with an official citation. No figure the arithmetic depends on
+is computed from memory — because the figures that matter here have already moved: the Black
+Money Act relief threshold replaced an earlier ₹5 lakh bank-balance carve-out in 2024, the
+foreign tax credit deadline was rewritten in 2022, and then the whole Act was replaced.
 
 | Registry | Tax year | Statute | Entries |
 |---|---|---|---|
@@ -1416,6 +1489,27 @@ itr-prep rules --annual-only  # just the ones that need re-verifying each year
 Each entry declares a **review class**. `stable` means fixed by statute — a settled
 convention or a historical date. `annual` means a Finance Act or a notification can move
 it, and it must be re-verified before the registry is used for a later assessment year.
+
+### The registry is not a feature list
+
+Every entry also declares a **`code_status`**, and `itr-prep rules` groups its output by it.
+Four of twenty-eight entries in the AY 2027-28 registry are figures the arithmetic reads; the
+other twenty-four are cited law that nothing in this tool acts on. That distinction was
+invisible until now — every entry printed identically, with the same citations and the same
+re-check instruction — and its absence is what led the author of this tool to believe the
+mutual-fund support was implemented. It is not. It is research.
+
+| `code_status` | Entries per registry | What it means |
+|---|---|---|
+| `read_by_code` | 4 | The arithmetic reads this value out of the registry. `black_money_relief_threshold_inr` and `black_money_s43_penalty_inr` by `threshold`, `foreign_share_long_term_holding` by `positions` and `cli`, and the foreign tax credit deadline by `emit` |
+| `hardcoded_at_call_site` | 6 | Describes what the code really does, but the code does not read it. Changing the entry changes nothing |
+| `not_read` | 2 | Nothing reads it and nothing acts on it. A recorded gap: `revised_return_deadline`, and `schedule_fa_reporting_period`, which is never cross-checked against the `--year` you pass |
+| `research_only` | 16 (AY 2027-28 only) | Cited law with no code behind it: the whole mutual-fund and capital-gains-rate block |
+
+`tests/test_rules_registry.py` greps `itrprep/` for every key and fails if a `read_by_code`
+entry is not referenced there, or if an entry in any other class is. The classification would
+rot within a release otherwise, and a registry that overstates what the tool does is the
+specific failure this whole labelling exists to prevent.
 
 ### AY 2027-28 is a change of statute, not a refresh
 
@@ -1449,7 +1543,8 @@ Three things worth knowing without reading that table:
   months from the end of the tax year under section 263(5).
 - **The registry gained Indian mutual fund entries**, cited from the Gazette text:
   grandfathering (s.90(7)–(8)), Specified Mutual Funds (s.76), both capital gains rates
-  (ss.196–198), holding periods (s.2(101)) and FIFO (s.67(7)(c)). No code reads them yet.
+  (ss.196–198), holding periods (s.2(101)) and FIFO (s.67(7)(c)). No code reads them, they are
+  all tagged `research_only`, and `itr-prep rules` prints them under a heading that says so.
   Two carry `implementation_trap` blocks that the test suite refuses to let anyone delete —
   AMFI's 31 January 2018 file has both a *Net Asset Value* and a *Repurchase Price* column
   and they differ on 4,756 of its 9,502 rows, and section 76 makes a Specified Mutual Fund
@@ -1466,9 +1561,10 @@ That is enforced, not merely documented, because a note in a file gets skipped:
   decided under.
 - **`tests/test_rules_registry.py` fails** if any entry lacks an official source URL, if
   any entry cites a secondary aggregator as its authority, if an `annual` entry has been
-  left behind by the registry it lives in, or if an `annual` entry is missing from
-  [`docs/ANNUAL-REVIEW.md`](docs/ANNUAL-REVIEW.md). It also asserts the arithmetic reads
-  the registry rather than a reintroduced literal.
+  left behind by the registry it lives in, if an `annual` entry is missing from
+  [`docs/ANNUAL-REVIEW.md`](docs/ANNUAL-REVIEW.md), or if an entry's `code_status` no longer
+  matches what `itrprep/` references. It also asserts the arithmetic reads the registry rather
+  than a reintroduced literal.
 
 The suite fails while the runtime only warns, deliberately. A contributor or a CI run
 should be stopped dead by a registry that has rotted. Someone mid-filing should not be:
@@ -1498,21 +1594,33 @@ successor at section 90(7)–(8) governs mutual fund units, so it is now in.
 
 ## Verification
 
-Eight suites, 1,171 checks, all runnable offline once the caches are warm, and all of them
+Eight suites, 1,317 checks, all runnable offline once the caches are warm, and all of them
 on macOS and Linux alike — CI runs the whole set on both:
 
 ```bash
 .venv/bin/python tests/test_validation_teeth.py        # 26 cases
 .venv/bin/python tests/test_pipeline.py                # 80 checks
 .venv/bin/python tests/test_splits_cash_threshold.py   # 67 checks
-.venv/bin/python tests/test_doctor_readback.py         # 101 checks
+.venv/bin/python tests/test_doctor_readback.py         # 153 checks
 .venv/bin/python tests/test_multisection_adapter.py    # 111 checks
 .venv/bin/python tests/test_multisheet_workbook.py     # 117 checks
-.venv/bin/python tests/test_rules_registry.py          # 579 checks
+.venv/bin/python tests/test_rules_registry.py          # 673 checks
 .venv/bin/python tests/test_unlock_credentials.py      # 90 checks
 ```
 
-The registry suite was 167 checks and is now 579. Two things account for most of the jump:
+The doctor suite gained 52 checks and the registry suite 94, all from the two changes above.
+The doctor suite now plants an Indian security of every shape the scope guard claims to
+detect — an `INE` ISIN, an `INF` ISIN, an `IN` ISIN that is neither, an ISIN carried only on
+the issuer row, an INR row, a rupee sign, an NSE suffix, a BSE suffix and an issuer whose
+country is `INDIA` — and asserts each is refused, by `doctor`, by `build`, by `threshold` and
+by `run`. It then asserts the negative half, which is the half that could break the tool:
+`IVV`, `JNJ`, `CSCO` and `AVGO` still trip nothing, a foreign fund whose *name* says "Fund",
+"Growth", "Direct Plan" and "IDCW" still passes, a hand-written `INVALID` in the `isin` column
+is not mistaken for an ISIN, and `BRITISH INDIAN OCEAN TERRITORY` is not India. The registry
+suite's addition is the `code_status` drift check described above.
+
+The registry suite was 167 checks before the second registry existed. Two things account for
+most of that earlier jump:
 there is a second registry, and the suite now runs the citation, review-class and staleness
 blocks against **every** registry on disk rather than only the newest. Before, adding
 `rules/AY2027-28.json` would silently have retired `rules/AY2026-27.json` from the suite.
@@ -1531,9 +1639,9 @@ three schema-dependent checks. Both say so when they skip and neither fails, so:
 
 | Configuration | Checks |
 |---|---|
-| Bare clone: `./setup.sh` and nothing else | **1,130** |
-| Plus `requirements-unlock.txt` — what CI runs | **1,168** |
-| Plus the ITD schema in `schemas/` | **1,171** |
+| Bare clone: `./setup.sh` and nothing else | **1,276** |
+| Plus `requirements-unlock.txt` — what CI runs | **1,314** |
+| Plus the ITD schema in `schemas/` | **1,317** |
 
 CI installs the unlock extras deliberately — a proof that skips is not one — and does not
 fetch the schema, since the department's artefact is not ours to download in a workflow.
@@ -1758,8 +1866,10 @@ itr-prep run        --year YYYY [--drop DIR] [--work DIR] [--out FILE]
                   [--account BROKER=ACCOUNT_ID ...] [--years 2022-2025]
                   [--peak-basis {usd,inr}] [--split-basis {current,historical}]
                   [--format {itr,prefill}] [--merge-into FILE] [--no-a2]
-                  [--allow-dropped-rows] [--offline] [--no-validate]
+                  [--allow-dropped-rows] [--allow-indian-securities]
+                  [--offline] [--no-validate]
 itr-prep doctor     [--work DIR] [--years 2022-2025] [--no-prices] [--offline]
+                  [--allow-indian-securities]
 itr-prep import     --year YYYY --json FILE --utility FILE [--audit FILE]   # Windows/WSL
                   [--workdir 'C:\temp\itrprep'] [--name STEM] [--label NAME]
                   [--no-save] [--timeout SECS] [--verbose]
@@ -1770,10 +1880,11 @@ itr-prep normalize  --broker {etrade,fidelity,indmoney} --input FILE --account-i
 itr-prep build      --year YYYY --out FILE [--work DIR]
                   [--format {itr,prefill}] [--merge-into FILE]
                   [--peak-basis {usd,inr}] [--split-basis {current,historical}]
-                  [--cash FILE] [--no-a2] [--offline] [--no-validate]
+                  [--cash FILE] [--no-a2] [--allow-indian-securities]
+                  [--offline] [--no-validate]
 itr-prep threshold  [--years 2022-2025] [--work DIR] [--out FILE]
                   [--peak-basis {usd,inr}] [--split-basis {current,historical}]
-                  [--cash FILE] [--offline]
+                  [--cash FILE] [--allow-indian-securities] [--offline]
 itr-prep unlock     [--input PATH] [--out-dir DIR] [--env-file FILE]
                   [--list-credentials]
 itr-prep rules      [--assessment-year YYYY-YY] [--annual-only]
@@ -1785,7 +1896,9 @@ Path overrides are deliberately left out above — `--transactions`, `--issuers`
 somewhere other than its default, and `--help` on any subcommand lists the ones it takes.
 `--allow-dropped-rows` is in the list because it is not plumbing: an unreadable row is
 **blocking**, and this is the only way past it. Read the named rows first — a dropped vest
-understates Schedule FA.
+understates Schedule FA. `--allow-indian-securities` is there for the same reason and is the
+only way past a scope refusal — see
+[Indian securities are refused](#indian-securities-are-refused) before reaching for it.
 
 `run` composes `fx-update`, `normalize`, `doctor`, `threshold` and `build`. It stops at the
 first hard error and names the stage. The individual subcommands are unchanged and still work
@@ -1818,11 +1931,13 @@ itrprep/
   emit.py          Schedule FA JSON, both formats, with the traps encoded
   validate.py      draft-aware validation against the official ITD schema
   rules.py         the only way code reaches a statutory figure, with staleness teeth
+  scope.py         what may be disclosed: the Indian-securities refusal, in one place
   host.py          the only module that knows the import step needs a Windows Excel
   unlock.py        .env-sourced document passwords that never leave the process
   cli.py           command line
 rules/
-  AY2026-27.json   every statutory figure, cited, classed stable or annual
+  AY2026-27.json   every statutory figure, cited, classed stable or annual and tagged
+  AY2027-28.json   with how much code stands behind it
 docs/
   RUNBOOK_AY2026-27.md   linear checklist from downloads to a filed return
   ANNUAL-REVIEW.md       what to re-verify before filing a new assessment year
@@ -1844,12 +1959,13 @@ tests/
   test_validation_teeth.py       proof the validation rejects the traps
   test_splits_cash_threshold.py  splits, cash balances, threshold report
   test_doctor_readback.py        preflight, header sniffing, import verification,
-                                 schema resolution
+                                 schema resolution, the Indian-securities refusal
   test_multisection_adapter.py   per-section column resolution, gross/withheld/net,
                                  sell-to-cover, loud failure on a dropped row
   test_multisheet_workbook.py    every worksheet read, FMV over paid price, nested
                                  grant/vest/withholding records
-  test_rules_registry.py         citations, review classes, AY coverage, staleness
+  test_rules_registry.py         citations, review classes, code status, AY coverage,
+                                 staleness
   test_unlock_credentials.py     adversarial: proof a password cannot escape
 schemas/                 where to put the ITD schema; contents are not tracked
 data/                    cached FX rates and prices (created by fx-update / build)
@@ -1893,6 +2009,12 @@ for t in tests/test_*.py; do .venv/bin/python "$t" || break; done
   so (it compares the column against the amount column) but does not rewrite it.
 - **Prices come from Yahoo**, an unofficial endpoint that can change or rate-limit. Caches
   and `prices_override.csv` are the mitigation.
+- **The Indian-securities refusal cannot catch a bare ticker.** All four of its signals — an
+  `IN`-prefixed ISIN, an INR row, an NSE or BSE suffix, an `INDIA` issuer country — depend on
+  data the tool does not itself produce, and no supported broker export carries an ISIN. An
+  Indian holding entered as a plain ticker with nothing else will still be valued and disclosed.
+  The refusal says this about itself, and
+  [`docs/KNOWN-ISSUES.md`](docs/KNOWN-ISSUES.md) issue 6 records what would actually close it.
 - **The threshold report is arithmetic, not advice.** It aggregates your own data against
   ₹20,00,000 on two bases. Which basis a tribunal would accept is unsettled, and the report
   says so rather than resolving it.
@@ -1930,7 +2052,9 @@ and nowhere else, it is not built. Check the code before relying on any of it.
   touches Schedule FA. **The rules-registry entries now exist** —
   [`rules/AY2027-28.json`](rules/AY2027-28.json) carries grandfathering, Specified Mutual
   Funds, both rates, holding periods and FIFO, cited to the Income-tax Act, 2025 — but no
-  code reads them and there are no fixtures. The registry work was the cheap half.
+  code reads them, they are all tagged `research_only`, and there are no fixtures. The registry
+  work was the cheap half. Until it is built, an Indian fund put into `transactions.csv` is
+  [refused](#indian-securities-are-refused) rather than misfiled.
 - **ITR-1, ITR-3 and ITR-4.** The department's utilities for these share much of the ITR-2
   VBA, so the import mechanism may well carry over — but "may well" is the whole distance
   between this list and the [Verification](#verification) section. Nothing about the sheet

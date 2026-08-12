@@ -15,7 +15,25 @@ decided under the Income-tax Act, 1961 and AY 2027-28 onwards under the Income-t
 2025, which renumbered almost every provision. Each entry in the later registry records the
 earlier provision it descends from. See `docs/ANNUAL-REVIEW.md`.
 
-Two things are enforced rather than documented, because a note in a file gets skipped:
+What the code actually reads, and what it does not
+--------------------------------------------------
+A registry that prints every entry identically invites a reader -- including the author of
+this tool, who made exactly this mistake about mutual funds -- to assume that anything in it
+is implemented. Most of it is not. So every entry also declares a `code_status`, and
+`itr-prep rules` groups its output by it rather than burying it in a field list:
+
+  `read_by_code`             computing code reads this value out of the registry.
+  `hardcoded_at_call_site`   the entry describes what the code really does, but the code
+                             does not read the entry to do it.
+  `not_read`                 nothing reads it and nothing acts on it. A latent gap, recorded
+                             deliberately rather than deleted.
+  `research_only`            cited research with no code behind it at all.
+
+`tests/test_rules_registry.py` greps the package for every key: a `read_by_code` entry whose
+key appears nowhere in `itrprep/` fails, and so does an entry in any of the other three
+classes whose key appears there. The classification would rot within one refactor otherwise.
+
+Three things are enforced rather than documented, because a note in a file gets skipped:
 
   1. **Coverage.** Building a filing for an assessment year later than any registry we
      have is a hard error. Computing AY 2027-28 against AY 2026-27 figures is exactly the
@@ -27,6 +45,10 @@ Two things are enforced rather than documented, because a note in a file gets sk
      than the one being filed is reported loudly at runtime and fails
      `tests/test_rules_registry.py`. `stable` means fixed by statute -- a settled
      convention or a historical date -- and carries `applies_to: "all"`.
+
+  3. **Classification.** Every entry declares a `code_status` from the closed set above.
+     A new entry cannot be added without deciding which one it is, so "nobody thought about
+     it" cannot pass for "implemented".
 
 Runtime warns and the test suite fails, deliberately. A contributor or CI run should be
 stopped dead by a registry that has rotted; someone mid-filing should not be, because
@@ -46,6 +68,34 @@ REVIEW_ANNUAL = "annual"
 REVIEW_CLASSES = (REVIEW_STABLE, REVIEW_ANNUAL)
 
 APPLIES_TO_ALL = "all"
+
+# How much of the code stands behind an entry. Ordered from "the arithmetic depends on this"
+# to "nothing here touches it", which is the order `itr-prep rules` prints its groups in.
+CODE_READ = "read_by_code"
+CODE_HARDCODED = "hardcoded_at_call_site"
+CODE_NOT_READ = "not_read"
+CODE_RESEARCH = "research_only"
+CODE_STATUSES = (CODE_READ, CODE_HARDCODED, CODE_NOT_READ, CODE_RESEARCH)
+
+# Only the first class may be referenced from itrprep/. The other three are defined by the
+# absence of a reference, which is what makes the drift test in tests/test_rules_registry.py
+# possible at all.
+CODE_STATUS_READS_THE_REGISTRY = (CODE_READ,)
+
+CODE_STATUS_HEADINGS = {
+    CODE_READ: "READ BY CODE -- the arithmetic reads these values out of the registry",
+    CODE_HARDCODED: (
+        "HARDCODED AT THE CALL SITE -- these describe what the code really does, but "
+        "the code does not read them"
+    ),
+    CODE_NOT_READ: (
+        "NOT READ -- nothing reads these and nothing acts on them. Recorded gaps, not "
+        "behaviour"
+    ),
+    CODE_RESEARCH: (
+        "RESEARCH ONLY -- cited law with NO CODE BEHIND IT. Nothing here computes any of it"
+    ),
+}
 
 # Primary sources only. A rate, a limit or a date is cited to the Act, to a CBDT
 # notification or circular, or to the department's own site -- never to an aggregator.
@@ -104,6 +154,7 @@ class Entry:
     key: str
     value: object
     review: str
+    code_status: str
     applies_to: str
     verified_on: str
     statute: str
@@ -114,6 +165,11 @@ class Entry:
     @property
     def is_annual(self) -> bool:
         return self.review == REVIEW_ANNUAL
+
+    @property
+    def reads_the_registry(self) -> bool:
+        """Is computing code supposed to reach this entry through `itrprep/rules.py`?"""
+        return self.code_status in CODE_STATUS_READS_THE_REGISTRY
 
     def source_lines(self) -> list[str]:
         return [
@@ -149,10 +205,19 @@ class Rules:
                 )
             if "value" not in body:
                 raise RulesError(f"{path}: entry {key!r} has no value")
+            code_status = body.get("code_status", "")
+            if code_status not in CODE_STATUSES:
+                raise RulesError(
+                    f"{path}: entry {key!r} has code_status {code_status!r}; expected one "
+                    f"of {CODE_STATUSES}. Every entry has to say how much of the code "
+                    f"stands behind it, so that a reader of `itr-prep rules` can tell "
+                    f"cited research from implemented behaviour."
+                )
             self.entries[key] = Entry(
                 key=key,
                 value=body["value"],
                 review=review,
+                code_status=code_status,
                 applies_to=body.get("applies_to", ""),
                 verified_on=body.get("verified_on", ""),
                 statute=body.get("statute", ""),
@@ -199,6 +264,20 @@ class Rules:
 
     def annual_entries(self) -> list[Entry]:
         return [e for e in self.entries.values() if e.is_annual]
+
+    def by_code_status(self, entries=None) -> list[tuple[str, list[Entry]]]:
+        """`CODE_STATUSES` order, each with its entries by key. Empty classes are kept.
+
+        An empty group is printed rather than skipped: "no entry in this registry is read by
+        code" is itself worth seeing, and a class that silently disappears from the output is
+        a class nobody notices has emptied.
+        """
+        pool = list(self.entries.values() if entries is None else entries)
+        return [
+            (status, sorted((e for e in pool if e.code_status == status),
+                            key=lambda e: e.key))
+            for status in CODE_STATUSES
+        ]
 
     # ------------------------------------------------------------- staleness
 

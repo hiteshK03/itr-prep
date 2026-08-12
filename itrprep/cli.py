@@ -18,6 +18,7 @@ from . import (
     intermediate,
     positions,
     rules,
+    scope,
     splits,
     threshold,
     unlock,
@@ -44,6 +45,18 @@ _SCHEMA_HELP = (
     f"the newest {validate.SCHEMA_GLOB} found in ./{validate.SCHEMA_DIRNAME}/ or the "
     f"current directory"
 )
+
+_ALLOW_INDIAN_HELP = (
+    "carry on with holdings that look like Indian securities. Only after checking that "
+    "every one of them is genuinely FOREIGN -- an Indian mutual fund or equity in "
+    "Schedule FA asserts a foreign asset you do not hold, and this tool does not compute "
+    "Indian holdings at all. itrprep/scope.py says what the check keys on and what it "
+    "cannot see."
+)
+
+
+def _add_scope_flag(parser) -> None:
+    parser.add_argument(scope.ALLOW_FLAG, action="store_true", help=_ALLOW_INDIAN_HELP)
 
 
 def _work_paths(work_dir: str) -> dict[str, str]:
@@ -282,7 +295,10 @@ def cmd_build(args) -> int:
         )
         issuers = intermediate.read_issuers(args.issuers or paths["issuers"])
         accounts = intermediate.read_accounts(args.accounts or paths["accounts"])
-        intermediate.cross_check(transactions, issuers, accounts)
+        intermediate.cross_check(
+            transactions, issuers, accounts,
+            allow_indian_securities=args.allow_indian_securities,
+        )
         cash_path = args.cash or paths["cash"]
         cash_balances = intermediate.read_cash_balances(cash_path)
     except DataError as exc:
@@ -615,7 +631,13 @@ def cmd_unlock(args) -> int:
 # ---------------------------------------------------------------- rules
 
 def cmd_rules(args) -> int:
-    """Show where every statutory figure came from, without running anything."""
+    """Show where every statutory figure came from, and how much code stands behind it.
+
+    Grouped by `code_status` rather than by review class, because "is this implemented?" is
+    the question a reader of this output actually has and the one it used to answer wrongly by
+    printing every entry identically. The mutual fund block has to be unmistakable as
+    research at a glance.
+    """
     try:
         registry = rules.load(args.assessment_year or None)
     except rules.RulesError as exc:
@@ -634,26 +656,48 @@ def cmd_rules(args) -> int:
     entries = registry.annual_entries() if args.annual_only else list(
         registry.entries.values()
     )
-    for entry in sorted(entries, key=lambda e: (e.review, e.key)):
-        flag = "CONTESTED " if entry.contested else ""
-        print(f"{entry.key}")
-        print(f"  value          {entry.value!r}")
-        print(f"  review         {flag}{entry.review}"
-              + (f", stated for AY {entry.applies_to}"
-                 if entry.applies_to != rules.APPLIES_TO_ALL else ""))
-        print(f"  verified       {entry.verified_on}")
-        print(f"  authority      {entry.statute}")
-        for line in entry.source_lines():
-            print(f"  source         {line}")
-        if entry.is_annual:
-            print(f"  re-check       {entry.check}")
+    for status, group in registry.by_code_status(entries):
+        print("=" * 78)
+        print(rules.CODE_STATUS_HEADINGS[status])
+        print(f"  code_status: {status}   ({len(group)} of {len(entries)} shown here)")
+        print("=" * 78)
         print()
+        if not group:
+            print("  (none)")
+            print()
+            continue
+        for entry in group:
+            flag = "CONTESTED " if entry.contested else ""
+            print(f"{entry.key}")
+            print(f"  code_status    {status}")
+            print(f"  value          {entry.value!r}")
+            print(f"  review         {flag}{entry.review}"
+                  + (f", stated for AY {entry.applies_to}"
+                     if entry.applies_to != rules.APPLIES_TO_ALL else ""))
+            print(f"  verified       {entry.verified_on}")
+            print(f"  authority      {entry.statute}")
+            for line in entry.source_lines():
+                print(f"  source         {line}")
+            if entry.is_annual:
+                print(f"  re-check       {entry.check}")
+            print()
 
     annual = registry.annual_entries()
     print(f"{len(registry.entries)} entries, {len(annual)} of them marked annual and "
           f"needing re-verification")
     print("before this registry is used for a later assessment year. The checklist is "
           "docs/ANNUAL-REVIEW.md.")
+    print()
+    counts = {status: len(group) for status, group in registry.by_code_status()}
+    print("How much code stands behind them:")
+    for status in rules.CODE_STATUSES:
+        print(f"  {counts[status]:>3}  {status}")
+    print()
+    print("Only the read_by_code entries are figures the arithmetic depends on. An entry in "
+          "any of")
+    print("the other three classes is a cited statement about the law that NOTHING IN THIS "
+          "TOOL")
+    print("acts on -- research_only most of all. Do not read the registry as a feature list.")
     return 0
 
 
@@ -806,6 +850,7 @@ def cmd_run(args) -> int:
     report = doctor.run_checks(
         paths, years=years, prices=prices, fx_cache=args.fx_cache,
         offline=args.offline,
+        allow_indian_securities=args.allow_indian_securities,
     )
     print(doctor.render(report, args.work, years))
     if report.errors:
@@ -823,6 +868,7 @@ def cmd_run(args) -> int:
         cash="", overrides="", out=os.path.join(args.work, "threshold_report.txt"),
         peak_basis=args.peak_basis, split_basis=args.split_basis,
         offline=args.offline, fx_cache=args.fx_cache, price_cache=args.price_cache,
+        allow_indian_securities=args.allow_indian_securities,
     )
     if cmd_threshold(thr_args):
         return _stop(
@@ -841,6 +887,7 @@ def cmd_run(args) -> int:
         split_basis=args.split_basis, no_a2=args.no_a2, offline=args.offline,
         fx_cache=args.fx_cache, price_cache=args.price_cache, schema=args.schema,
         no_validate=args.no_validate,
+        allow_indian_securities=args.allow_indian_securities,
     )
     if cmd_build(build_args):
         return _stop(5, "build", "The build failed; see the message above.")
@@ -1021,6 +1068,7 @@ def cmd_doctor(args) -> int:
     report = doctor.run_checks(
         paths, years=years, prices=prices, fx_cache=args.fx_cache,
         offline=args.offline,
+        allow_indian_securities=args.allow_indian_securities,
     )
     # run_checks derives the year span from the data when not told; recover it for the
     # summary line so the user sees which years were actually checked.
@@ -1046,7 +1094,10 @@ def cmd_threshold(args) -> int:
         )
         issuers = intermediate.read_issuers(args.issuers or paths["issuers"])
         accounts = intermediate.read_accounts(args.accounts or paths["accounts"])
-        intermediate.cross_check(transactions, issuers, accounts)
+        intermediate.cross_check(
+            transactions, issuers, accounts,
+            allow_indian_securities=args.allow_indian_securities,
+        )
         cash_balances = intermediate.read_cash_balances(args.cash or paths["cash"])
     except DataError as exc:
         print(f"\nInput data problem:\n\n{exc}\n", file=sys.stderr)
@@ -1215,6 +1266,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_build.add_argument("--price-cache", default=DEFAULT_PRICE_CACHE)
     p_build.add_argument("--schema", default="", help=_SCHEMA_HELP)
     p_build.add_argument("--no-validate", action="store_true")
+    _add_scope_flag(p_build)
     p_build.set_defaults(func=cmd_build)
 
     p_imp = sub.add_parser(
@@ -1277,6 +1329,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_run.add_argument("--price-cache", default=DEFAULT_PRICE_CACHE)
     p_run.add_argument("--schema", default="", help=_SCHEMA_HELP)
     p_run.add_argument("--no-validate", action="store_true")
+    _add_scope_flag(p_run)
     p_run.set_defaults(func=cmd_run)
 
     p_doc = sub.add_parser(
@@ -1293,6 +1346,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_doc.add_argument("--offline", action="store_true")
     p_doc.add_argument("--fx-cache", default=DEFAULT_FX_CACHE)
     p_doc.add_argument("--price-cache", default=DEFAULT_PRICE_CACHE)
+    _add_scope_flag(p_doc)
     p_doc.set_defaults(func=cmd_doctor)
 
     p_thr = sub.add_parser(
@@ -1316,6 +1370,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_thr.add_argument("--offline", action="store_true")
     p_thr.add_argument("--fx-cache", default=DEFAULT_FX_CACHE)
     p_thr.add_argument("--price-cache", default=DEFAULT_PRICE_CACHE)
+    _add_scope_flag(p_thr)
     p_thr.set_defaults(func=cmd_threshold)
 
     p_unlock = sub.add_parser(

@@ -13,6 +13,7 @@ Run:  .venv/bin/python tests/test_doctor_readback.py
 from __future__ import annotations
 
 import copy
+import csv
 import json
 import os
 import shutil
@@ -22,7 +23,7 @@ import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from itrprep import adapters, doctor, readback, validate  # noqa: E402
+from itrprep import adapters, doctor, intermediate, readback, scope, validate  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SYNTH = os.path.join(ROOT, "tests", "synthetic")
@@ -174,6 +175,286 @@ def test_doctor_exit_codes() -> None:
         )
     check("exit 1 when there are errors", dirty.returncode == 1,
           f"rc={dirty.returncode}")
+
+
+# -- the Indian-securities scope guard ---------------------------------------
+#
+# `scripts/check_no_real_data.py --self-test` is the precedent for this block: plant every
+# shape the check claims to catch, in a throwaway copy, and assert it is caught. The negative
+# cases matter as much as the positive ones here, because a guard that fired on `IVV` -- an
+# iShares ETF, foreign, legitimately disclosable -- would be worse than no guard at all.
+#
+# Every value below is invented. No real security carries a `999Z01ZZ9` body, and the ISINs are
+# well-formed only in shape.
+
+FAKE_INDIAN_EQUITY_ISIN = "INE999Z01ZZ9"   # INE: an Indian company's equity
+FAKE_INDIAN_FUND_ISIN = "INF999Z01ZZ9"     # INF: an Indian mutual fund scheme
+FAKE_INDIAN_GILT_ISIN = "IN0099Z01ZZ9"     # IN, third letter neither E nor F
+FAKE_FOREIGN_ISIN = "US99999ZZZZ9"
+
+_PLANTED_TXN = {
+    "account_id": "indmoney_us",
+    "txn_type": "BUY",
+    "date": "2025-04-01",
+    "quantity": "100",
+    "price_usd": "12.50",
+    "amount_usd": "1250.00",
+    "acq_kind": "OPEN_MARKET",
+    "lot_id": "PLANTED-1",
+    "notes": "planted by the test suite",
+}
+
+_PLANTED_ISSUER = {
+    "entity_name": "Invented Holdings Limited",
+    "entity_address": "1 Invented Road, Nowhere",
+    "entity_zip": "999999",
+    "entity_nature": "Listed Company",
+    "country_code": "2",
+    "country_name": "UNITED STATES OF AMERICA",
+}
+
+
+def _append_rows(path: str, rows: list[dict], extra_columns: list[str]) -> None:
+    with open(path, newline="", encoding="utf-8") as fh:
+        existing = list(csv.DictReader(fh))
+        fields = list(existing[0].keys())
+    for column in extra_columns:
+        if column not in fields:
+            fields.append(column)
+    with open(path, "w", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=fields)
+        writer.writeheader()
+        for row in existing + rows:
+            writer.writerow({f: row.get(f, "") for f in fields})
+
+
+def _plant(tmp: str, *, txns: list[dict] = (), issuers: list[dict] = ()) -> str:
+    """A copy of the synthetic dataset with extra holdings grafted on."""
+    work = os.path.join(tmp, "work")
+    shutil.copytree(SYNTH, work)
+    if txns:
+        _append_rows(os.path.join(work, "transactions.csv"),
+                     [dict(_PLANTED_TXN, **t) for t in txns],
+                     ["isin", "currency"])
+    if issuers:
+        _append_rows(os.path.join(work, "issuers.csv"),
+                     [dict(_PLANTED_ISSUER, **i) for i in issuers], ["isin"])
+    return work
+
+
+def _scope_errors(work: str, **kwargs) -> list:
+    report = doctor.run_checks(work_paths(work), years=[2025], prices=None,
+                              fx_cache=FX_CACHE, offline=True, **kwargs)
+    return [f for f in report.errors if f.category == "scope"], report
+
+
+def test_scope_guard_catches_every_shape() -> None:
+    print("\nscope: each detectable shape of an Indian security is refused")
+    shapes = [
+        ("an INF ISIN on a transaction row (Indian mutual fund)",
+         {"txns": [{"ticker": "SYNTHMF", "isin": FAKE_INDIAN_FUND_ISIN}],
+          "issuers": [{"ticker": "SYNTHMF"}]},
+         "SYNTHMF"),
+        ("an INE ISIN on a transaction row (Indian equity)",
+         {"txns": [{"ticker": "SYNTHEQ", "isin": FAKE_INDIAN_EQUITY_ISIN}],
+          "issuers": [{"ticker": "SYNTHEQ"}]},
+         "SYNTHEQ"),
+        ("an IN ISIN that is neither INE nor INF (government paper)",
+         {"txns": [{"ticker": "SYNTHGS", "isin": FAKE_INDIAN_GILT_ISIN}],
+          "issuers": [{"ticker": "SYNTHGS"}]},
+         "SYNTHGS"),
+        ("an ISIN carried only on the issuers.csv row",
+         {"txns": [{"ticker": "SYNTHISS"}],
+          "issuers": [{"ticker": "SYNTHISS", "isin": FAKE_INDIAN_FUND_ISIN}]},
+         "SYNTHISS"),
+        ("an INR-denominated row with no ISIN anywhere",
+         {"txns": [{"ticker": "SYNTHINR", "currency": "INR"}],
+          "issuers": [{"ticker": "SYNTHINR"}]},
+         "SYNTHINR"),
+        ("a rupee sign in the currency column",
+         {"txns": [{"ticker": "SYNTHRS", "currency": "\u20b9"}],
+          "issuers": [{"ticker": "SYNTHRS"}]},
+         "SYNTHRS"),
+        ("an NSE ticker suffix, no ISIN and no currency",
+         {"txns": [{"ticker": "SYNTHNSE.NS"}],
+          "issuers": [{"ticker": "SYNTHNSE.NS"}]},
+         "SYNTHNSE.NS"),
+        ("a BSE ticker suffix",
+         {"txns": [{"ticker": "SYNTHBSE.BO"}],
+          "issuers": [{"ticker": "SYNTHBSE.BO"}]},
+         "SYNTHBSE.BO"),
+        ("an issuer whose country is INDIA",
+         {"txns": [{"ticker": "SYNTHIND"}],
+          "issuers": [{"ticker": "SYNTHIND", "country_name": "INDIA"}]},
+         "SYNTHIND"),
+    ]
+    for label, planted, ticker in shapes:
+        with tempfile.TemporaryDirectory() as tmp:
+            errors, _ = _scope_errors(_plant(tmp, **planted))
+            check(f"refused: {label}", bool(errors))
+            check(f"  and the message names {ticker}",
+                  any(ticker in f.message for f in errors),
+                  "; ".join(f.message for f in errors)[:200])
+
+
+def test_scope_guard_leaves_foreign_holdings_alone() -> None:
+    print("\nscope: foreign holdings are untouched")
+    from itrprep.prices import PriceStore
+
+    txns = intermediate.read_transactions(os.path.join(SYNTH, "transactions.csv"))
+    issuers = intermediate.read_issuers(os.path.join(SYNTH, "issuers.csv"))
+    check("the synthetic dataset trips no signal",
+          scope.find_indian_securities(txns, issuers) == [])
+    for ticker in ("IVV", "JNJ", "CSCO", "AVGO"):
+        holdings = [t for t in txns if t.ticker == ticker]
+        check(f"{ticker} is still in the fixtures and still clean",
+              bool(holdings)
+              and scope.find_indian_securities(holdings, issuers) == [])
+
+    report = doctor.run_checks(
+        work_paths(SYNTH), years=[2023, 2024, 2025],
+        prices=PriceStore(PRICE_CACHE, offline=True), fx_cache=FX_CACHE, offline=True,
+    )
+    check("doctor raises no scope error on the synthetic dataset",
+          not [f for f in report.errors if f.category == "scope"])
+    check("and says so in what it checked",
+          any("Indian" in line for line in report.checked),
+          " | ".join(report.checked))
+
+    # The whole point of keying on structure: these words are all over the names of legitimate
+    # foreign funds, and an earlier design that matched them would have failed here.
+    with tempfile.TemporaryDirectory() as tmp:
+        work = _plant(
+            tmp,
+            txns=[{"ticker": "SYNTHETF", "isin": FAKE_FOREIGN_ISIN,
+                   "currency": "USD",
+                   "notes": "Growth option, IDCW reinvestment, Direct Plan"}],
+            issuers=[{"ticker": "SYNTHETF", "isin": FAKE_FOREIGN_ISIN,
+                      "entity_name": "Invented Global Growth Fund - Direct Plan IDCW"}],
+        )
+        errors, _ = _scope_errors(work)
+        check("a foreign fund whose NAME says Fund, Growth, Direct Plan and IDCW passes",
+              not errors, "; ".join(f.message for f in errors)[:200])
+
+    with tempfile.TemporaryDirectory() as tmp:
+        work = _plant(tmp, txns=[{"ticker": "SYNTHPH", "isin": "INVALID"}],
+                      issuers=[{"ticker": "SYNTHPH"}])
+        errors, _ = _scope_errors(work)
+        check("a hand-written INVALID placeholder in the isin column is not an ISIN",
+              not errors, "; ".join(f.message for f in errors)[:200])
+
+    with tempfile.TemporaryDirectory() as tmp:
+        work = _plant(tmp, txns=[{"ticker": "SYNTHBIOT"}],
+                      issuers=[{"ticker": "SYNTHBIOT",
+                                "country_name": "BRITISH INDIAN OCEAN TERRITORY",
+                                "country_code": "22"}])
+        errors, _ = _scope_errors(work)
+        check("BRITISH INDIAN OCEAN TERRITORY is not India",
+              not errors, "; ".join(f.message for f in errors)[:200])
+
+
+def test_scope_refusal_message_is_actionable() -> None:
+    print("\nscope: the refusal explains itself")
+    with tempfile.TemporaryDirectory() as tmp:
+        work = _plant(tmp, txns=[{"ticker": "SYNTHMF", "isin": FAKE_INDIAN_FUND_ISIN}],
+                      issuers=[{"ticker": "SYNTHMF"}])
+        errors, _ = _scope_errors(work)
+        text = "\n".join(f.message + "\n" + f.hint for f in errors)
+    check("it counts the holdings in the singular when there is one",
+          "1 holding in this ledger looks like an INDIAN security" in text, text[:160])
+    check("it names the ISIN it read", FAKE_INDIAN_FUND_ISIN in text)
+    check("it names the file the row came from", "transactions.csv" in text)
+    check("it says a mutual fund scheme is what INF means",
+          "Indian mutual fund scheme" in text)
+    check("it explains that Schedule FA is for assets outside India",
+          "OUTSIDE India" in text)
+    check("it cites the department's own field name",
+          "CountryCodeExcludingIndia" in text)
+    check("it says the tool does not handle Indian mutual funds or capital gains at all",
+          "does not handle Indian mutual funds or Indian capital gains" in text)
+    check("it says what to do instead: Schedule CG, outside this tool",
+          "Schedule CG" in text and "outside this tool" in text)
+    check("it admits what it cannot see",
+          "WILL NOT" in text and "BE CAUGHT" in text)
+    check("it names the escape hatch", scope.ALLOW_FLAG in text)
+    check("and warns that the flag is not per-row",
+          "rather than for" in text)
+
+
+def test_scope_guard_is_not_bypassable_by_skipping_doctor() -> None:
+    print("\nscope: build and threshold refuse too, and the flag is the only way past")
+    with tempfile.TemporaryDirectory() as tmp:
+        work = _plant(tmp, txns=[{"ticker": "SYNTHMF", "isin": FAKE_INDIAN_FUND_ISIN}],
+                      issuers=[{"ticker": "SYNTHMF"}])
+        out = os.path.join(tmp, "out")
+
+        def cli(*args):
+            return subprocess.run([PYTHON, "-m", "itrprep.cli", *args],
+                                  cwd=ROOT, capture_output=True, text=True)
+
+        doc = cli("doctor", "--work", work, "--years", "2025")
+        check("doctor exits 1", doc.returncode == 1, f"rc={doc.returncode}")
+        check("doctor names the guard",
+              "INDIAN" in doc.stdout + doc.stderr)
+
+        built = cli("build", "--work", work, "--year", "2025", "--out", out,
+                    "--offline", "--fx-cache", FX_CACHE, "--price-cache", PRICE_CACHE)
+        check("build refuses even though doctor was never run", built.returncode != 0,
+              f"rc={built.returncode}")
+        check("build's refusal is the scope refusal, not a downstream failure",
+              scope.ALLOW_FLAG in built.stdout + built.stderr,
+              (built.stdout + built.stderr)[-300:])
+
+        thr = cli("threshold", "--work", work, "--year", "2025",
+                  "--offline", "--fx-cache", FX_CACHE, "--price-cache", PRICE_CACHE)
+        check("threshold refuses as well", thr.returncode != 0, f"rc={thr.returncode}")
+        check("threshold's refusal is the scope refusal",
+              scope.ALLOW_FLAG in thr.stdout + thr.stderr,
+              (thr.stdout + thr.stderr)[-300:])
+
+        ran = cli("run", "--work", work, "--year", "2025", "--out", out,
+                  "--offline", "--fx-cache", FX_CACHE, "--price-cache", PRICE_CACHE)
+        check("run surfaces it at its first stage", ran.returncode != 0,
+              f"rc={ran.returncode}")
+        check("and does not reach the build stage first",
+              scope.ALLOW_FLAG in ran.stdout + ran.stderr,
+              (ran.stdout + ran.stderr)[-300:])
+
+        allowed = cli("doctor", "--work", work, "--years", "2025", scope.ALLOW_FLAG)
+        check("with the flag, doctor downgrades it to a warning and exits 0",
+              allowed.returncode == 0 and scope.ALLOW_FLAG in allowed.stdout
+              and "was given" in allowed.stdout,
+              f"rc={allowed.returncode}")
+        # The report wraps, so compare against it unwrapped.
+        unwrapped = " ".join(allowed.stdout.split())
+        check("and the warning still names what is being let through",
+              "SYNTHMF" in unwrapped
+              and "asserts a foreign holding you do not have" in unwrapped,
+              unwrapped[-200:])
+
+
+def test_scope_guard_survives_a_round_trip() -> None:
+    print("\nscope: the isin and currency columns are not dropped on the way through")
+    with tempfile.TemporaryDirectory() as tmp:
+        work = _plant(tmp, txns=[{"ticker": "SYNTHMF", "isin": FAKE_INDIAN_FUND_ISIN,
+                                  "currency": "INR"}],
+                      issuers=[{"ticker": "SYNTHMF"}])
+        path = os.path.join(work, "transactions.csv")
+        txns = intermediate.read_transactions(path)
+        planted = [t for t in txns if t.ticker == "SYNTHMF"]
+        check("read_transactions keeps the isin",
+              bool(planted) and planted[0].isin == FAKE_INDIAN_FUND_ISIN)
+        check("read_transactions keeps the currency",
+              bool(planted) and planted[0].currency == "INR")
+
+        again = os.path.join(tmp, "rewritten.csv")
+        intermediate.write_transactions(again, txns)
+        rewritten = [t for t in intermediate.read_transactions(again)
+                     if t.ticker == "SYNTHMF"]
+        check("write_transactions round-trips both, so `normalize --append` cannot "
+              "silently disarm the guard",
+              bool(rewritten) and rewritten[0].isin == FAKE_INDIAN_FUND_ISIN
+              and rewritten[0].currency == "INR")
 
 
 # -- header sniffing ---------------------------------------------------------
@@ -796,6 +1077,11 @@ def main() -> int:
     test_doctor_catches_oversell_and_missing_cash()
     test_doctor_surfaces_splits()
     test_doctor_exit_codes()
+    test_scope_guard_catches_every_shape()
+    test_scope_guard_leaves_foreign_holdings_alone()
+    test_scope_refusal_message_is_actionable()
+    test_scope_guard_is_not_bypassable_by_skipping_doctor()
+    test_scope_guard_survives_a_round_trip()
     test_detection_by_content()
     test_xlsx_reading()
     test_schema_resolution()

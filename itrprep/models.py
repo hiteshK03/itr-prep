@@ -67,6 +67,14 @@ ISSUER_COLUMNS = [
     "country_name",
 ]
 
+# Optional on both transactions.csv and issuers.csv, and required in neither: no adapter
+# produces them and no hand-filled file predating them may stop reading. They exist so that
+# the Indian-security guard in `itrprep/scope.py` has something structural to key on -- an
+# ISIN's country prefix and an INR denomination are the two signals that separate an Indian
+# mutual fund or equity, which must never reach Schedule FA, from a foreign-domiciled fund or
+# ETF, which belongs there. See that module for what the guard can and cannot see.
+OPTIONAL_SECURITY_COLUMNS = ["isin", "currency"]
+
 ACCOUNT_COLUMNS = [
     "account_id",
     "institution_name",
@@ -131,6 +139,11 @@ class Transaction:
     disposal_kind: str = ""
     lot_id: str = ""
     notes: str = ""
+    # Optional identity fields, read when the export or the hand-filled file carries them and
+    # otherwise blank. Nothing computes from either: they exist for the scope guard, which
+    # refuses to put an Indian security in Schedule FA. See itrprep/scope.py.
+    isin: str = ""
+    currency: str = ""
     source_row: int = 0
     source_file: str = ""
 
@@ -169,6 +182,8 @@ class Issuer:
     entity_nature: str
     country_code: str = "2"
     country_name: str = "UNITED STATES OF AMERICA"
+    # As on Transaction: optional, uncomputed, and read only by the scope guard.
+    isin: str = ""
 
 
 @dataclass

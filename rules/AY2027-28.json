@@ -3,6 +3,7 @@
   "_purpose": "Every statutory figure, date and convention this tool relies on, for ONE assessment year, each one cited to an official source. Code reads values from here and never from memory. A value that is not in this file, with a source, is a value the tool has no business asserting.",
   "_source_policy": "Primary sources only, in this order: the Income-tax Act or the Finance Act text, a CBDT notification or circular, then incometaxindia.gov.in or incometax.gov.in. Secondary aggregators -- ClearTax, Taxmann, TaxGuru, practitioner blogs -- may be used to FIND a provision and may be quoted in prose, but must never be the cited authority for a rate, a limit or a date. tests/test_rules_registry.py enforces the domain rule.",
   "_review_classes": "stable = fixed by statute and not expected to move; a historical date or a settled convention. annual = set or revised by a Finance Act, or otherwise dependent on the assessment year. Every 'annual' entry must be re-verified before this registry is used for a later assessment year -- see docs/ANNUAL-REVIEW.md.",
+  "_code_status_values": "How much of the code stands behind an entry, so that a reader of `itr-prep rules` can tell implemented behaviour from captured research. read_by_code = computing code reads this value out of the registry. hardcoded_at_call_site = the entry describes what the code really does, but the code does not read the entry to do it. not_read = nothing reads it and nothing acts on it; a latent gap recorded deliberately rather than deleted. research_only = cited law with no code behind it at all. tests/test_rules_registry.py greps itrprep/ for every key and fails if a read_by_code key is referenced nowhere, or if a key in any other class is referenced there.",
 
   "_act_transition": "THIS IS THE FIRST REGISTRY UNDER A DIFFERENT STATUTE. The Income-tax Act, 2025 (No. 30 of 2025) received assent on 21 August 2025 and, by its own section 1(3), came into force on 1 April 2026. Section 536(1) repeals the Income-tax Act, 1961. FY 2026-27 -- what the 1961 Act called previous year 2026-27 and the 2025 Act calls tax year 2026-27 -- is therefore the FIRST year assessed under the new Act, and this registry is the first one whose citations are not 1961-Act citations. Section 536(2)(c) is the reason rules/AY2026-27.json must NOT be renumbered to match: the repealed Act continues to apply to proceedings 'in respect of any tax year beginning before the 1st April, 2026', so AY 2026-27 was, is and remains a 1961-Act year and its registry, runbook and audit trail must keep saying so. Every entry below carries an 'act_transition' object recording the old provision, the new provision, and whether the change was a renumbering or a change of substance. docs/ANNUAL-REVIEW.md carries the same mapping in table form.",
   "_act_transition_change_values": "renumbered_only = the same rule, in a differently numbered provision. renumbered_and_substantive = the provision moved AND what it says changed; read the entry. unchanged_separate_legislation = not affected by the 2025 Act at all, because the provision is in a different enactment. new_entry = not present in rules/AY2026-27.json.",
@@ -15,6 +16,7 @@
   "entries": {
     "schedule_fa_reporting_basis": {
       "value": "calendar_year",
+      "code_status": "hardcoded_at_call_site",
       "review": "stable",
       "applies_to": "all",
       "verified_on": "2026-08-03",
@@ -44,6 +46,7 @@
 
     "schedule_fa_reporting_period": {
       "value": {"start": "2026-01-01", "end": "2026-12-31"},
+      "code_status": "not_read",
       "review": "annual",
       "applies_to": "2027-28",
       "verified_on": "2026-08-03",
@@ -69,6 +72,7 @@
 
     "schedule_fa_fx_convention": {
       "value": "sbi_tt_buying_rate_on_the_relevant_date",
+      "code_status": "hardcoded_at_call_site",
       "review": "stable",
       "applies_to": "all",
       "verified_on": "2026-08-03",
@@ -94,6 +98,7 @@
 
     "income_fx_convention_specified_date": {
       "value": "last_day_of_the_month_immediately_preceding",
+      "code_status": "hardcoded_at_call_site",
       "review": "stable",
       "applies_to": "all",
       "verified_on": "2026-08-03",
@@ -115,6 +120,7 @@
 
     "equity_perquisite_cost_of_acquisition": {
       "value": "fair_market_value_charged_to_perquisite",
+      "code_status": "hardcoded_at_call_site",
       "review": "stable",
       "applies_to": "all",
       "verified_on": "2026-08-03",
@@ -136,6 +142,7 @@
 
     "transfer_expenditure_deductible": {
       "value": true,
+      "code_status": "hardcoded_at_call_site",
       "review": "stable",
       "applies_to": "all",
       "verified_on": "2026-08-03",
@@ -157,6 +164,7 @@
 
     "schedule_fa_disclosure_unconditional": {
       "value": true,
+      "code_status": "hardcoded_at_call_site",
       "review": "stable",
       "applies_to": "all",
       "verified_on": "2026-08-03",
@@ -182,6 +190,7 @@
 
     "foreign_share_long_term_holding": {
       "value": {"months": 24, "days": 730},
+      "code_status": "read_by_code",
       "review": "annual",
       "applies_to": "2027-28",
       "verified_on": "2026-08-03",
@@ -208,6 +217,7 @@
     "black_money_s43_penalty_inr": {
       "value": 1000000,
       "unit": "INR",
+      "code_status": "read_by_code",
       "review": "annual",
       "applies_to": "2027-28",
       "verified_on": "2026-08-03",
@@ -242,6 +252,7 @@
     "black_money_relief_threshold_inr": {
       "value": 2000000,
       "unit": "INR",
+      "code_status": "read_by_code",
       "review": "annual",
       "applies_to": "2027-28",
       "verified_on": "2026-08-03",
@@ -274,6 +285,7 @@
         "conditional_on": "the return for the tax year being furnished within the time specified under section 263(1) or section 263(4)",
         "updated_return_basis": "on or before the date the section 263(6)(a) return is furnished"
       },
+      "code_status": "read_by_code",
       "review": "annual",
       "applies_to": "2027-28",
       "verified_on": "2026-08-03",
@@ -299,6 +311,7 @@
 
     "revised_return_deadline": {
       "value": {"date": "2028-03-31", "section": "263(5)", "fee_free_until": "2027-12-31"},
+      "code_status": "not_read",
       "review": "annual",
       "applies_to": "2027-28",
       "verified_on": "2026-08-03",
@@ -328,6 +341,7 @@
 
     "mf_grandfathering_cutoff_date": {
       "value": "2018-02-01",
+      "code_status": "research_only",
       "review": "stable",
       "applies_to": "all",
       "verified_on": "2026-08-03",
@@ -349,6 +363,7 @@
 
     "mf_grandfathering_valuation_date": {
       "value": "2018-01-31",
+      "code_status": "research_only",
       "review": "stable",
       "applies_to": "all",
       "verified_on": "2026-08-03",
@@ -370,6 +385,7 @@
 
     "mf_grandfathering_fmv_basis_unlisted": {
       "value": "net_asset_value",
+      "code_status": "research_only",
       "review": "stable",
       "applies_to": "all",
       "verified_on": "2026-08-03",
@@ -399,6 +415,7 @@
 
     "mf_grandfathering_fmv_basis_listed": {
       "value": "highest_price_quoted_on_the_exchange_on_31_january_2018",
+      "code_status": "research_only",
       "review": "stable",
       "applies_to": "all",
       "verified_on": "2026-08-03",
@@ -420,6 +437,7 @@
 
     "specified_mf_deemed_short_term": {
       "value": true,
+      "code_status": "research_only",
       "review": "stable",
       "applies_to": "all",
       "verified_on": "2026-08-03",
@@ -447,6 +465,7 @@
 
     "specified_mf_acquisition_cutoff_date": {
       "value": "2023-04-01",
+      "code_status": "research_only",
       "review": "stable",
       "applies_to": "all",
       "verified_on": "2026-08-03",
@@ -469,6 +488,7 @@
     "specified_mf_debt_threshold_pct": {
       "value": 65,
       "unit": "percent",
+      "code_status": "research_only",
       "review": "annual",
       "applies_to": "2027-28",
       "contested": true,
@@ -496,6 +516,7 @@
     "mf_equity_oriented_threshold_pct": {
       "value": {"direct": 65, "fund_of_funds": 90},
       "unit": "percent",
+      "code_status": "research_only",
       "review": "stable",
       "applies_to": "all",
       "verified_on": "2026-08-03",
@@ -518,6 +539,7 @@
     "ltcg_equity_rate_pct": {
       "value": 12.5,
       "unit": "percent",
+      "code_status": "research_only",
       "review": "annual",
       "applies_to": "2027-28",
       "verified_on": "2026-08-03",
@@ -544,6 +566,7 @@
     "ltcg_equity_exemption_inr": {
       "value": 125000,
       "unit": "INR",
+      "code_status": "research_only",
       "review": "annual",
       "applies_to": "2027-28",
       "verified_on": "2026-08-03",
@@ -570,6 +593,7 @@
     "stcg_equity_rate_pct": {
       "value": 20,
       "unit": "percent",
+      "code_status": "research_only",
       "review": "annual",
       "applies_to": "2027-28",
       "verified_on": "2026-08-03",
@@ -596,6 +620,7 @@
     "ltcg_other_rate_pct": {
       "value": 12.5,
       "unit": "percent",
+      "code_status": "research_only",
       "review": "annual",
       "applies_to": "2027-28",
       "verified_on": "2026-08-03",
@@ -621,6 +646,7 @@
 
     "mf_holding_period_months": {
       "value": {"equity_oriented": 12, "listed_security": 12, "default": 24},
+      "code_status": "research_only",
       "review": "annual",
       "applies_to": "2027-28",
       "verified_on": "2026-08-03",
@@ -646,6 +672,7 @@
 
     "mf_unit_indexation_available": {
       "value": false,
+      "code_status": "research_only",
       "review": "annual",
       "applies_to": "2027-28",
       "verified_on": "2026-08-03",
@@ -667,6 +694,7 @@
 
     "mf_lot_matching_method": {
       "value": "FIFO",
+      "code_status": "research_only",
       "review": "stable",
       "applies_to": "all",
       "verified_on": "2026-08-03",
@@ -689,6 +717,7 @@
     "mf_bonus_unit_cost": {
       "value": 0,
       "unit": "INR",
+      "code_status": "research_only",
       "review": "stable",
       "applies_to": "all",
       "verified_on": "2026-08-03",

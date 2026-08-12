@@ -18,7 +18,7 @@ import os
 from dataclasses import dataclass, field
 from decimal import Decimal
 
-from . import intermediate, positions, splits
+from . import intermediate, positions, scope, splits
 from .fx import FxError, FxRates
 from .models import TXN_BUY, TXN_DIVIDEND, TXN_SELL, DataError
 from .prices import PriceError
@@ -89,7 +89,7 @@ class Report:
 
 
 def run_checks(paths: dict, years=None, prices=None, fx_cache: str = "",
-               offline: bool = False) -> Report:
+               offline: bool = False, allow_indian_securities: bool = False) -> Report:
     """Check everything that can be checked without building.
 
     `paths` carries the same keys `_work_paths` produces. `prices` may be None to skip the
@@ -118,6 +118,7 @@ def run_checks(paths: dict, years=None, prices=None, fx_cache: str = "",
     years = sorted(set(years))
 
     _check_references(transactions, issuers, accounts, report)
+    _check_indian_securities(transactions, issuers, allow_indian_securities, report)
     _check_account_magnitude(transactions, accounts, report)
     _check_duplicates(transactions, report)
     _check_dividends(transactions, report)
@@ -245,6 +246,30 @@ def _check_references(transactions, issuers, accounts, report):
         )
     if not missing_issuers and not missing_accounts:
         report.note("every ticker and account_id resolves")
+
+
+def _check_indian_securities(transactions, issuers, allowed, report):
+    """An Indian mutual fund or equity in Schedule FA is a wrong filing, not a stray row.
+
+    Reported here as well as in `intermediate.cross_check` so the user meets it at preflight
+    rather than after a build. The full refusal is carried as the message, because every part
+    of it -- what was detected, why it cannot be disclosed, what this tool does not do, what
+    to do instead, and what the check cannot see -- is needed by whoever is being stopped.
+    """
+    hits = scope.find_indian_securities(transactions, issuers)
+    if not hits:
+        report.note("no holding looks like an Indian security")
+        return
+    if allowed:
+        report.warn(
+            "scope",
+            f"{scope.ALLOW_FLAG} was given, so Indian-looking securities are being "
+            f"disclosed in Schedule FA: " + scope.summarise(hits),
+            "only correct if every one of these is genuinely a foreign security. An Indian "
+            "asset in Schedule FA asserts a foreign holding you do not have.",
+        )
+        return
+    report.error("scope", scope.refusal(hits))
 
 
 def _check_account_magnitude(transactions, accounts, report):
@@ -637,25 +662,37 @@ def _render_findings(findings):
     for finding in findings:
         lines.append(f"  [{finding.category}]")
         for chunk in _wrap(finding.message):
-            lines.append(f"    {chunk}")
+            lines.append(f"    {chunk}" if chunk else "")
         if finding.hint:
             hint = _wrap(finding.hint, width=68)
             lines.append(f"    -> {hint[0]}")
-            lines += [f"       {chunk}" for chunk in hint[1:]]
+            lines += [f"       {chunk}" if chunk else "" for chunk in hint[1:]]
         lines.append("")
     return lines
 
 
 def _wrap(text: str, width: int = 72):
-    words = str(text).split()
+    """Wrap to `width`, keeping the line breaks and per-line indentation already there.
+
+    Almost every finding is one paragraph of words and comes out exactly as it always did.
+    The scope refusal is not: it is an evidence list followed by several paragraphs and a
+    bulleted list, and reflowing all of that into one run of words would destroy the part a
+    reader most needs to act on.
+    """
     out: list[str] = []
-    line = ""
-    for word in words:
-        if line and len(line) + 1 + len(word) > width:
-            out.append(line)
-            line = word
-        else:
-            line = f"{line} {word}".strip()
-    if line:
-        out.append(line)
+    for raw in str(text).split("\n"):
+        stripped = raw.strip()
+        if not stripped:
+            out.append("")
+            continue
+        indent = raw[: len(raw) - len(raw.lstrip())]
+        line = ""
+        for word in stripped.split():
+            if line and len(indent) + len(line) + 1 + len(word) > width:
+                out.append(indent + line)
+                line = word
+            else:
+                line = f"{line} {word}".strip()
+        if line:
+            out.append(indent + line)
     return out or [""]

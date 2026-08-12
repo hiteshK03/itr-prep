@@ -327,3 +327,66 @@ Act, 2015" — [indiabudget.gov.in](https://www.indiabudget.gov.in/budget2024-25
 The searches that came back empty are part of the finding and were: the proviso's operative
 words against reported decisions and CBDT material, and section 43 aggregation scope generally.
 **Absence of authority is recorded as a result here, not as an incomplete search.**
+
+---
+
+## 6. An Indian security with no ISIN and no currency is not caught
+
+**Status:** open, and open by construction rather than by omission. The guard that catches the
+detectable cases is in `itrprep/scope.py` and is enforced by `doctor`, `build`, `threshold` and
+`run`.
+**Bites when:** somebody hand-enters an Indian mutual fund or Indian equity as a bare ticker —
+no `isin`, no `currency`, no `.NS` or `.BO` suffix, and an issuer row that does not say `INDIA`.
+
+Until this pass, an Indian mutual fund in `transactions.csv` was disclosed in Schedule FA as
+though it were a foreign equity in a foreign custodial account: no error, no warning, a
+complete return asserting a foreign asset the filer does not hold. That is now refused, on
+four structural signals — an ISIN whose ISO-3166 country prefix is `IN`, an INR-denominated
+row, an NSE or BSE venue suffix on the ticker, and an issuer whose country is `INDIA`.
+
+**What it cannot reach.** All four signals depend on data the tool does not itself produce.
+`isin` and `currency` are optional, hand-entered columns; no adapter writes either, because no
+supported broker export carries an ISIN. The venue suffix depends on the user having typed the
+ticker the way a market-data source would. So a row with none of them is invisible to the
+guard, and the pipeline will value and disclose it exactly as before.
+
+**Why it is not closed by matching scheme names.** That was considered and rejected. "Fund",
+"Growth", "Direct Plan" and "IDCW" all appear in the names of legitimate foreign holdings —
+`IVV` is an iShares ETF and is in this repository's own fixtures — so a name-based rule would
+refuse holdings that genuinely belong in Schedule FA. A guard that breaks the correct case to
+catch more of the incorrect one is a worse guard.
+
+**What would actually close it** is asking, rather than inferring: a required per-ticker
+declaration of where the security is domiciled, refused if absent, in the way `--split-basis`
+is demanded rather than guessed. That is a change to the input contract and to every existing
+working directory, so it is recorded here rather than done incidentally.
+
+The refusal states this limit in its own output, so the person being refused is told what the
+check did not look at. Somebody who is *not* refused is told nothing, which is the residual
+risk and cannot be fixed from inside the guard.
+
+---
+
+## 7. `schedule_fa_reporting_period` is never checked against the year you pass
+
+**Status:** open. Present in both registries, tagged `not_read`, and read by nothing.
+**Bites when:** the registry's reporting period and the tool's own idea of the reporting period
+diverge — that is, if a future Finance Act moves Schedule FA off the calendar year, or if a
+registry entry is edited in the belief that the code will follow it.
+
+`rules/AY2026-27.json` and `rules/AY2027-28.json` both carry a
+`schedule_fa_reporting_period` entry stating that Schedule FA reports the calendar year, cited
+to the department's instructions. Nothing reads it. The calendar-year window is derived
+independently in `itrprep/positions.py` from the `--year` the user passes, and the two are
+never compared. If they ever disagreed, the registry would be documenting one period while the
+arithmetic computed another, and no check anywhere would notice.
+
+The cross-check is cheap — assert the derived window against the registry entry at the point
+`--year` is resolved, and refuse if they differ — but it is a behavioural change to the build
+path and was deliberately left out of the pass that added the `code_status` labelling, whose
+scope was to make inert entries visible rather than to wire them up. The same applies to
+`revised_return_deadline`, which is also `not_read`, but which nothing computes from and which
+would only ever be printed.
+
+`tests/test_rules_registry.py` will fail if either entry's tag stops matching what the code
+references, so wiring one up without retagging it is caught.

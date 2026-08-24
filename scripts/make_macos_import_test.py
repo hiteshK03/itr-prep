@@ -294,6 +294,15 @@ BASE_OVERRIDES = {
     "PartA_GEN1/FilingStatus/ResidentialStatus": "RES",
     "PartA_GEN1/FilingStatus/HeldUnlistedEqShrPrYrFlg": "N",
     "PartA_GEN1/FilingStatus/FiiFpiFlag": "N",
+    # The department's own desktop utility refuses to generate the upload JSON until these
+    # four Part A-Gen questions are answered (its Internal Validation lists exactly these as
+    # "Category of Defect A" errors otherwise). The values are plain synthetic answers for a
+    # resident individual: in India 182+ days under s.6(1)(a), no 115H benefit claim, not
+    # governed by the Portuguese Civil Code, not a company director.
+    "PartA_GEN1/FilingStatus/ConditionsResStatus": "1",
+    "PartA_GEN1/FilingStatus/BenefitUs115HFlg": "N",
+    "PartA_GEN1/FilingStatus/PortugeseCC5A": "N",
+    "PartA_GEN1/FilingStatus/CompDirectorPrvYrFlg": "N",
     # Validation rule 746: the return is invalid without this, whatever Schedule FA says.
     "PartB_TTI/AssetOutIndiaFlag": "YES",
     "PartB_TTI/Refund/BankAccountDtls/BankDtlsFlag": "N",

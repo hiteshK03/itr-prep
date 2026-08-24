@@ -25,8 +25,10 @@ import glob
 import json
 import os
 import re
+from decimal import Decimal, InvalidOperation
 
-from jsonschema.validators import validator_for
+from jsonschema.exceptions import ValidationError
+from jsonschema.validators import extend, validator_for
 
 # The schema is a large artefact published by the Income Tax Department. It is deliberately
 # NOT vendored into this repository: it is theirs to distribute, it changes without notice,
@@ -159,10 +161,39 @@ def schema_draft(schema: dict) -> str:
 
 
 def _validator(schema: dict):
-    """Pick the validator class the schema itself asks for."""
+    """Pick the validator class the schema itself asks for, then extend it with the exact
+    ``multipleOf`` check (see below) before instantiating."""
     cls = validator_for(schema)
     cls.check_schema(schema)
-    return cls(schema)
+    return extend(cls, {"multipleOf": _exact_multiple_of})(schema)
+
+
+def _exact_multiple_of(validator, dB, instance, schema):
+    """``multipleOf`` done in decimal, not binary floats.
+
+    The department's Schedule 112A schema puts ``"multipleOf": 0.0001`` on five per-unit
+    fields -- "four decimal places". jsonschema's stock implementation checks
+    ``int(instance / dB) != instance / dB`` in binary floats, where ``0.0001`` is not
+    representable, so roughly 28% of perfectly legal four-decimal values fail
+    (``12.34`` is one of them). The constraint and the values are both right; the
+    arithmetic is wrong. So the check is re-implemented exactly, on the value's shortest
+    round-trip decimal representation -- ``Decimal(repr(x))`` -- which is the literal
+    ``json.dump`` writes and therefore the figure the department actually receives.
+
+    Over-precise values still fail: five decimals, or float noise like ``0.1 + 0.2``,
+    are not multiples of 0.0001 in decimal either. The decision, and the options it
+    rejected, are recorded in KNOWN-ISSUES.md, issue 1.
+    """
+    if not validator.is_type(instance, "number"):
+        return
+    try:
+        failed = Decimal(repr(instance)) % Decimal(repr(dB)) != 0
+    except (InvalidOperation, ValueError):
+        # Non-finite floats (inf/nan) and anything Decimal refuses cannot be an exact
+        # multiple of a decimal step.
+        failed = True
+    if failed:
+        yield ValidationError(f"{instance!r} is not a multiple of {dB}")
 
 
 def validate_schedule_fa(schedule_fa: dict, schema: dict) -> list[str]:

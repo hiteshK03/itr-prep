@@ -56,8 +56,8 @@ derived at generation time rather than written into the tree.
 
 - [ ] **2.1** From the portal's
   [Downloads → Income Tax Returns](https://www.incometax.gov.in/iec/foportal/downloads/income-tax-returns),
-  take **Utility for MAC** — version 1.2.2, released 17 July 2026, an 85 MB ZIP. Unzip it, open
-  the DMG inside (`ITDe-Filing-2026-1.2.2.dmg`), drag the app to `/Applications`.
+  take **Utility for MAC** — version 1.2.3, released 14 August 2026, an 85 MB ZIP. Unzip it,
+  open the DMG inside (`ITDe-Filing-2026-1.2.3.dmg`), drag the app to `/Applications`.
 
 - [ ] **2.2** The app is **arm64 only**, minimum macOS 11.0. Any Apple Silicon Mac is fine; an
   Intel Mac cannot run it at all and there is no point continuing on one.
@@ -75,7 +75,7 @@ derived at generation time rather than written into the tree.
 
 - [ ] **3.2** On the *File Returns* screen, choose the option that takes a prepared JSON. The
   department describes it as *"Import draft ITR filled in Online mode or import JSON generated
-  from Excel/HTML utility"*; note the exact label 1.2.2 uses, which may differ.
+  from Excel/HTML utility"*; note the exact label your version uses, which may differ.
 
 - [ ] **3.3** Select `schedule_fa_2025.json`, and write down what happens — accepted, rejected,
   or accepted with a warning — including the wording of any message.
@@ -175,3 +175,123 @@ virtualisation product Microsoft has authorised for Windows 11 on Apple silicon.
 
 Either way, record the failure above. Knowing the macOS route does *not* carry a large Table A3
 is worth as much as knowing it does.
+
+---
+
+## Test outcome — 25 August 2026
+
+Run on the department's **Common Offline Utility v1.2.3** for AY 2026-27 — the *Utility for
+MAC* release of **14 August 2026** (85.3 MB ZIP, DMG `ITDe-Filing-2026-1.2.3.dmg`) — on
+**macOS 26.5.2**, Apple Silicon. Quarantine cleared with
+`xattr -dr com.apple.quarantine /Applications/ITDe-Filing-2026.app` as step 2.3 describes.
+The kit was generated with `scripts/make_macos_import_test.py`; both shapes printed
+`Schema validation PASSED`, against `ITR-2_2026_Main_V1.2.json` re-verified byte-identical
+to what the portal serves.
+
+| | Shape A — partial ScheduleFA | Shape B — complete return |
+|---|---|---|
+| Accepted | **No** | **Yes** |
+| Table A3 rows seen | — (import not admitted) | **178** |
+| Table A2 rows seen | — | **3** |
+
+**Shape A.** `schedule_fa_2025.json` attached cleanly through the *Excel/HTML utility* import
+option, but the app's **Proceed button stayed disabled and no message appeared** — silent
+rejection, no error text of any kind. Nothing was imported, so step 3.4 (Part B-TTI item 19)
+was never reached. The shape this tool emits by default is not what the utility wants.
+
+**Shape B.** `complete_return_2025.json` imported and passed Internal Validation with the
+app's exact words: *"Validation successful! No errors were found."* One finding on the way:
+the first attempt failed Internal Validation until four `PartA_GEN1/FilingStatus` fields were
+added that the JSON schema does not make mandatory — `ConditionsResStatus`,
+`BenefitUs115HFlg`, `PortugeseCC5A`, `CompDirectorPrvYrFlg`. The generator now supplies them.
+A discard-previous-details dialog can also appear on a re-run if a draft already exists; it
+must be dismissed before the import option is offered.
+
+**Read-back (the point of the exercise).** The utility generated its own upload JSON
+(`AAAAA9999A_upload_2026-27…json`, ~93 KB) and a field-by-field diff of its `ScheduleFA`
+against the input reported:
+
+    ok — Schedule FA verified field by field: Table A3 178 row(s), Table A2 3 row(s), every value identical
+
+Because every value was identical, this settles steps 5.1–5.7 by construction: row counts and
+order (5.1), the `ROW nnn OF 178` name/address sequences (5.2), acquisition dates ascending
+in ISO order (5.3), the exact first and last rows of the table above (5.4), the 17 non-zero
+gross-paid rows and the two nil-closing rows at 047 and 153 (5.6), and peak > closing with
+country code `2` on every row (5.7). For **5.5 leading zeros: preserved** — ZIP codes
+round-tripped zero-padded, `00001` … `00178`; unlike the Excel utility, this app does not
+number-format the field.
+
+Caveats worth keeping:
+
+- The app deletes its upload JSON when the session ends; the read-back must run live during
+  the session, against the file it has just written.
+- Import is driven through the app's Accessibility tree (AppleScript) rather than by eye —
+  deterministic, no screenshots in the loop — with `scripts/macos_import_to_utility.py` as
+  the macOS analog of `itr-prep import`. One trap that implementation records: the utility's
+  action buttons are unlabeled in the accessibility tree (labels are painted onto the
+  webview canvas), and the validation screen's `floatRight` buttons render in reversed DOM
+  order, so the visually rightmost button is **Preview** (which walks into the login flow),
+  not Download JSON. The script therefore presses Download JSON by position: exclude the
+  leftmost wide button (Back), press the next one. With that, a fully unattended run on
+  25 August 2026 completed splash → import → questionnaire → validation → export → row
+  read-back with exit 0.
+- On macOS 26 the system reports that this app "includes a component that will not work with
+  the future release of macOS." The component is the bundled **wkhtmltopdf** — Intel-only
+  (x86_64), running under Rosetta 2; the utility's own binaries are arm64. It renders the PDF
+  preview only. It does not affect the import or the upload-JSON generation, and 1.2.3 is the
+  latest build the department publishes, so there is nothing to update to.
+
+**Verdict:** the macOS route carries a large Table A3. Import the complete return
+(`--merge-into`), not the default partial document, and read the rows back from the utility's
+own upload JSON. As of 1.2.3, next year's filing does not need to touch Windows.
+
+---
+
+## When the department ships a new build
+
+The portal's *Utility for MAC* bumps versions mid-season (1.2.2 → 1.2.3 within a month). The
+automation presses buttons by position, so a new build is the dangerous case — a moved button
+is a silent misclick. `scripts/macos_import_to_utility.py` therefore carries a version gate:
+
+1. **At startup it compares installed vs portal.** `--check-version` reports the two numbers
+   alone; a normal run prints both and warns when the portal is ahead. Neither case blocks an
+   *up-to-date* run — only an untested build does.
+2. **It refuses to drive a build the kit has not passed on.** The gate compares the installed
+   build against `VERIFIED_UTILITY_VERSION` (the build the "Test outcome" section above was
+   run against) and exits `3` if they differ. This is the protection that matters: the
+   positional clicks are only safe on the layout they were verified against.
+3. **`--force` is the escape hatch** once you have re-validated the new build yourself.
+
+**Re-validating a new build** (about ten minutes):
+
+1. Download the new *Utility for MAC* ZIP, install over `/Applications/ITDe-Filing-2026.app`,
+   clear quarantine (`xattr -dr com.apple.quarantine /Applications/ITDe-Filing-2026.app`).
+2. If the portal also published a newer ITR-2 schema, replace `schemas/ITR-2_2026_Main_V1.2.json`
+   and regenerate the kit (`scripts/make_macos_import_test.py`) so the test data matches the
+   new rules.
+3. Run the kit against the new build with `--force` (the build is unverified by definition):
+
+       .venv/bin/python scripts/macos_import_to_utility.py \
+         --json macos-utility-test/out/complete_return_2025.json --year 2025 --force
+
+4. If it exits 0 with `IMPORT VERIFIED`, bump `VERIFIED_UTILITY_VERSION` in the script to the
+   new version and add a dated line to the outcome table above. If it fails, do **not** bump —
+   fall back (next section) and fix the automation before trusting the new layout.
+
+**If the new build breaks the automation** (buttons moved, screens added, the splash changes):
+
+The gate means this can never bite silently — it refuses to run, so the worst case is a stalled
+filing, not a wrong one. Your options, in order:
+
+- **Run the same steps by hand.** Every screen the script drives has a labelled button on the
+  screen (the labels are just invisible to the accessibility tree). The checklist above is the
+  manual version; import the complete return, watch the validation screen, download the JSON,
+  and diff it yourself against the input.
+- **Fix the positional selectors.** The script isolates each screen's button geometry in one
+  helper each (`press_rightmost_unlabeled`, `press_download_json_button`, `select_excel_html_import`);
+  re-probe the new layout with a short AppleScript `entire contents` dump and adjust. The
+  floatRight reversal trap (rightmost = Preview, not Download JSON) is the one to re-check
+  first.
+- **Fall back to the verified route.** The README's route 4 — Windows 11 on Arm in a VM,
+  where `itr-prep import` reads every cell back through COM — has a proven round-trip and is
+  unaffected by whatever the macOS app changed.

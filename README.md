@@ -251,7 +251,7 @@ new utility builds through the filing season.
 **1. The department's own macOS utility — the answer, with one condition.**
 
 The **Common Offline Utility** covers **ITR-1, ITR-2, ITR-3 and ITR-4 for AY 2026-27** and is
-published for macOS as well as Windows: version **1.2.2, released 17 July 2026**, an 85 MB
+published for macOS as well as Windows: version **1.2.3, released 14 August 2026**, an 85 MB
 ZIP listed as *Utility for MAC* on the department's
 [Downloads → Income Tax Returns](https://www.incometax.gov.in/iec/foportal/downloads/income-tax-returns)
 page. It is a wholly different program from the Excel utility — a
@@ -260,7 +260,7 @@ and it generates and can directly submit the upload JSON itself, so nothing here
 reproduce anything the department signs.
 
 **The condition: the macOS build is Apple Silicon only.** Inspecting the Mach-O headers in
-`ITDe-Filing-2026-1.2.2.dmg`, the application binary and its updater are both **arm64**, with
+`ITDe-Filing-2026-1.2.3.dmg`, the application binary and its updater are both **arm64**, with
 `LC_BUILD_VERSION` giving a minimum of **macOS 11.0** (Big Sur). There is no universal binary
 and no x86_64 build of the app, so an **Intel Mac cannot run it** — arm64 code does not run
 under Rosetta, which translates the other direction. If your Mac is M1 or later this is the
@@ -278,16 +278,16 @@ utility ([Quicko's walkthrough](https://qna.tax/t/how-to-file-your-itr-on-income
 That is the same shape as the workflow here — prepare outside, import, let the department's
 software validate and generate.
 
-**What is not established, and matters:** whether that import accepts the partial
-`{"ITR":{"ITR2":{"ScheduleFA":…}}}` document this tool emits by default, or needs the complete
-return `--merge-into` produces; and whether Schedule FA Table A3 survives it with a large row
-count intact. Neither has been tested here, and the Excel utility's own importer failing
-silently is exactly the reason this project reads every cell back. **Check every Table A3 row
-in the utility before generating the JSON.** Settling it needs one run on an Apple Silicon
-Mac with a synthetic dataset — which is about twenty minutes' work and is written up as a
-checklist: [`docs/MACOS_UTILITY_TEST.md`](docs/MACOS_UTILITY_TEST.md), with
-`scripts/make_macos_import_test.py` generating both JSON shapes over a 178-row Table A3 sized
-and marked up so a truncation is visible by eye.
+**Established by test, 25 August 2026:** the import rejects the partial
+`{"ITR":{"ITR2":{"ScheduleFA":…}}}` document this tool emits by default — it attaches but
+the app's Proceed button never enables, silently. The complete return `--merge-into`
+produces imports cleanly and passes Internal Validation. A 178-row Table A3 survives it
+entirely: the utility's own re-generated upload JSON was diffed field-by-field against the
+input and every value matched — all 178 rows in order, ZIP codes zero-padded
+(`00001`…`00178`), dates ascending, peak > closing everywhere. Full record in
+[`docs/MACOS_UTILITY_TEST.md`](docs/MACOS_UTILITY_TEST.md) (*Test outcome — 25 August 2026*),
+including the utility version (1.2.3) this applies to — the department ships new builds
+mid-season, so re-check the record before relying on it.
 
 **2. Excel for Mac running the ITD workbook — no, and not marginally.**
 
@@ -2020,14 +2020,14 @@ for t in tests/test_*.py; do .venv/bin/python "$t" || break; done
   says so rather than resolving it.
 - **Only the ITR-2 utility is supported.** ITR-3 shares the VBA but the sheet/codename
   mapping was not checked.
-- **The import step needs Windows, and the macOS alternative is unverified.** The pipeline
-  runs anywhere; `itr-prep import` does not, because the department's `.xlsm` binds Windows
-  CryptoAPI and Windows COM. The department's Common Offline Utility for macOS looks like
-  the way through — it covers ITR-2 and accepts an imported JSON — but no run of this
-  tool's output through it has been done, and its macOS build is Apple Silicon only. See
-  [Where this runs](#where-this-runs), and
-  [`docs/MACOS_UTILITY_TEST.md`](docs/MACOS_UTILITY_TEST.md) for the checklist that would
-  close it.
+- **The import step needs Windows; the macOS alternative is tested but not wired to the
+  CLI.** The pipeline runs anywhere; `itr-prep import` does not, because the department's
+  `.xlsm` binds Windows CryptoAPI and Windows COM. The department's Common Offline Utility
+  for macOS has been verified to carry this tool's output (178-row Schedule FA intact,
+  read back from its own upload JSON — see
+  [`docs/MACOS_UTILITY_TEST.md`](docs/MACOS_UTILITY_TEST.md)), but that path is driven by a
+  standalone script (`scripts/macos_import_to_utility.py`), not a CLI subcommand, and its
+  macOS build is Apple Silicon only.
 - **The platform check tests whether Windows is reachable, not whether Excel is installed.**
   A WSL box with `powershell.exe` and `wslpath` but no Excel therefore gets past the boundary
   and fails inside COM instead of being refused up front. A pre-flight probe would mean a

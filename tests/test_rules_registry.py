@@ -301,17 +301,46 @@ def main() -> int:
               0 < len(by_status[rules.CODE_READ]) < len(loaded.entries) / 2,
               f"{len(by_status[rules.CODE_READ])} of {len(loaded.entries)}")
 
-    # The mutual-fund block is the whole reason this field exists. It must never be tagged
-    # as anything a reader could mistake for behaviour.
+    # The mutual-fund block is the reason this field exists: on 25 August 2026 the
+    # Schedule 112A engine (itrprep/capgain.py) started reading six of these entries,
+    # and they were flipped to read_by_code with that wiring -- nothing else. The old
+    # blanket "every mutual-fund entry is research_only" check existed to stop a reader
+    # mistaking captured research for behaviour; its successor has to be more precise,
+    # because now some of it IS behaviour. Two invariants replace it:
+    #
+    #   1. The entries the engine reads are tagged read_by_code (the per-entry grep
+    #      above already proves the package really reads each one).
+    #   2. Everything else in the block -- including the CONTESTED specified-mutual-fund
+    #      debt threshold -- stays research_only and is named nowhere under itrprep/.
+    #      A contested entry that computing code starts leaning on is a wrong-rate filing
+    #      waiting to happen; KNOWN-ISSUES.md issue 2 is the live disagreement.
     if mutual_funds := all_registries.get("2027-28"):
-        mf = [e for k, e in sorted(mutual_funds.entries.items())
-              if k.startswith(("mf_", "specified_mf_"))]
-        check("every mutual-fund entry is tagged research_only",
-              bool(mf) and all(e.code_status == rules.CODE_RESEARCH for e in mf),
-              str([(e.key, e.code_status) for e in mf
+        mf = {k: e for k, e in sorted(mutual_funds.entries.items())
+              if k.startswith(("mf_", "specified_mf_"))}
+        engine_reads = {
+            "mf_grandfathering_cutoff_date",
+            "mf_grandfathering_valuation_date",
+            "mf_holding_period_months",
+            "mf_lot_matching_method",
+            "mf_bonus_unit_cost",
+            "mf_unit_indexation_available",
+        }
+        check("the mutual-fund entries the Schedule 112A engine reads are exactly the "
+              "six tagged read_by_code",
+              {k for k, e in mf.items() if e.reads_the_registry} == engine_reads,
+              str(sorted((k, e.code_status) for k, e in mf.items()
+                         if (k in engine_reads) != e.reads_the_registry)))
+        check("no contested mutual-fund entry is read by any code",
+              all(not e.contested for k, e in mf.items() if e.reads_the_registry),
+              str([k for k, e in mf.items() if e.contested and e.reads_the_registry]))
+        research_only_mf = [e for k, e in mf.items() if k not in engine_reads]
+        check("the remaining mutual-fund entries stay research_only",
+              bool(research_only_mf)
+              and all(e.code_status == rules.CODE_RESEARCH for e in research_only_mf),
+              str([(e.key, e.code_status) for e in research_only_mf
                    if e.code_status != rules.CODE_RESEARCH]))
-        check("and none of them is read by anything",
-              all(e.key not in package_text for e in mf))
+        check("and none of them is named anywhere under itrprep/",
+              all(e.key not in package_text for e in research_only_mf))
 
     # An entry with no code_status at all must not load. Silence would default to whatever
     # the reader assumed, which is the failure this field exists to prevent.

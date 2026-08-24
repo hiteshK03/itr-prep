@@ -341,7 +341,7 @@
 
     "mf_grandfathering_cutoff_date": {
       "value": "2018-02-01",
-      "code_status": "research_only",
+      "code_status": "read_by_code",
       "review": "stable",
       "applies_to": "all",
       "verified_on": "2026-08-03",
@@ -363,7 +363,7 @@
 
     "mf_grandfathering_valuation_date": {
       "value": "2018-01-31",
-      "code_status": "research_only",
+      "code_status": "read_by_code",
       "review": "stable",
       "applies_to": "all",
       "verified_on": "2026-08-03",
@@ -646,7 +646,7 @@
 
     "mf_holding_period_months": {
       "value": {"equity_oriented": 12, "listed_security": 12, "default": 24},
-      "code_status": "research_only",
+      "code_status": "read_by_code",
       "review": "annual",
       "applies_to": "2027-28",
       "verified_on": "2026-08-03",
@@ -672,7 +672,7 @@
 
     "mf_unit_indexation_available": {
       "value": false,
-      "code_status": "research_only",
+      "code_status": "read_by_code",
       "review": "annual",
       "applies_to": "2027-28",
       "verified_on": "2026-08-03",
@@ -694,7 +694,7 @@
 
     "mf_lot_matching_method": {
       "value": "FIFO",
-      "code_status": "research_only",
+      "code_status": "read_by_code",
       "review": "stable",
       "applies_to": "all",
       "verified_on": "2026-08-03",
@@ -717,7 +717,7 @@
     "mf_bonus_unit_cost": {
       "value": 0,
       "unit": "INR",
-      "code_status": "research_only",
+      "code_status": "read_by_code",
       "review": "stable",
       "applies_to": "all",
       "verified_on": "2026-08-03",

@@ -1,0 +1,34 @@
+year,level,account_id,ticker,lot_id,acquire_date,peak_inr,peak_inr_conservative,peak_date,closing_inr,verdict_peak,verdict_closing,threshold_inr,note
+2022,YEAR,,,,,,,,,NO DATA,NO DATA,2000000,no holdings recorded; the earliest transaction in your data is 2023-05-22
+2023,LOT,fidelity_espp,JNJ,2023-H1,2023-06-30,257061,258718,2023-07-28,233549,,,,
+2023,LOT,fidelity_espp,JNJ,2023-H2,2023-12-29,194624,194624,2023-12-30,194624,,,,
+2023,LOT,indmoney_us,IVV,IVV-2023-05-22-001,2023-05-22,1190986,1190986,2023-12-28,1186146,,,,
+2023,ACCOUNT,fidelity_espp,,,,451685,453342,,428173,,,,"securities peak 451685, cash peak 0, securities closing 428173, cash closing 0"
+2023,ACCOUNT,indmoney_us,,,,1190986,1190986,,1186146,,,,"securities peak 1190986, cash peak 0, securities closing 1186146, cash closing 0"
+2023,YEAR,,,,,1642671,1644328,,1614319,UNDER,UNDER,2000000,"no cash balance supplied for fidelity_espp, indmoney_us -- these totals count securities only and understate the account by whatever uninvested cash it held"
+2024,LOT,etrade_stockplan,CSCO,GRANT-2022-11,2024-08-15,253044,254465,2024-12-05,252192,,,,
+2024,LOT,fidelity_espp,JNJ,2023-H1,2023-06-30,251723,251723,2024-09-10,221789,,,,
+2024,LOT,fidelity_espp,JNJ,2023-H2,2023-12-29,209769,209769,2024-09-10,184824,,,,
+2024,LOT,fidelity_espp,JNJ,2024-H1,2024-06-28,195784,195784,2024-09-10,172503,,,,
+2024,LOT,fidelity_espp,JNJ,2024-H2,2024-12-31,147859,147859,2024-12-31,147859,,,,
+2024,LOT,indmoney_us,IVV,IVV-2023-05-22-001,2023-05-22,1544239,1546930,2024-12-07,1504666,,,,
+2024,ACCOUNT,etrade_stockplan,,,,253044,254465,,252192,,,,"securities peak 253044, cash peak 0, securities closing 252192, cash closing 0"
+2024,ACCOUNT,fidelity_espp,,,,805135,805135,,726975,,,,"securities peak 805135, cash peak 0, securities closing 726975, cash closing 0"
+2024,ACCOUNT,indmoney_us,,,,1544239,1546930,,1504666,,,,"securities peak 1544239, cash peak 0, securities closing 1504666, cash closing 0"
+2024,YEAR,,,,,2602418,2606530,,2483833,OVER,OVER,2000000,"no cash balance supplied for etrade_stockplan, fidelity_espp, indmoney_us -- these totals count securities only and understate the account by whatever uninvested cash it held"
+2025,LOT,etrade_stockplan,CSCO,GRANT-2022-11,2024-08-15,345700,345700,2025-11-19,172297,,,,
+2025,LOT,etrade_stockplan,CSCO,GRANT-2023-08,2025-02-15,250260,250260,2025-08-08,0,,,,
+2025,LOT,etrade_stockplan,CSCO,GRANT-2023-08,2025-05-15,251243,251243,2025-12-10,241216,,,,
+2025,LOT,etrade_stockplan,CSCO,ESPP-2025-H1,2025-06-30,157924,157924,2025-12-10,151621,,,,
+2025,LOT,etrade_stockplan,CSCO,GRANT-2024-08,2025-08-15,215351,215351,2025-12-10,206756,,,,
+2025,LOT,fidelity_espp,JNJ,2023-H1,2023-06-30,348112,348112,2025-12-15,333285,,,,
+2025,LOT,fidelity_espp,JNJ,2023-H2,2023-12-29,290093,290093,2025-12-15,277737,,,,
+2025,LOT,fidelity_espp,JNJ,2024-H1,2024-06-28,270754,270754,2025-12-15,259221,,,,
+2025,LOT,fidelity_espp,JNJ,2024-H2,2024-12-31,232075,232075,2025-12-15,222190,,,,
+2025,LOT,indmoney_us,AVGO,AVGO-2025-03-05-009,2025-03-05,1638603,1638603,2025-08-12,0,,,,
+2025,LOT,indmoney_us,IVV,IVV-2023-05-22-001,2023-05-22,1793054,1793054,2025-10-08,612816,,,,
+2025,LOT,indmoney_us,IVV,IVV-2025-01-08-007,2025-01-08,741789,747582,2025-12-24,735379,,,,
+2025,ACCOUNT,etrade_stockplan,,,,1220478,1220478,,771890,,,,"securities peak 1220478, cash peak 0, securities closing 771890, cash closing 0"
+2025,ACCOUNT,fidelity_espp,,,,1141034,1141034,,1092433,,,,"securities peak 1141034, cash peak 0, securities closing 1092433, cash closing 0"
+2025,ACCOUNT,indmoney_us,,,,4173446,4179239,,1348195,,,,"securities peak 4173446, cash peak 0, securities closing 1348195, cash closing 0"
+2025,YEAR,,,,,6534958,6540751,,3212518,OVER,OVER,2000000,"no cash balance supplied for etrade_stockplan, fidelity_espp, indmoney_us -- these totals count securities only and understate the account by whatever uninvested cash it held"

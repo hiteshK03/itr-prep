@@ -1,0 +1,176 @@
+==============================================================================
+       AGGREGATE FOREIGN ASSET VALUE vs the Rs 20,00,000 s.43 threshold       
+==============================================================================
+
+Black Money Act s.43 penalty: Rs 10,00,000 per assessment year for
+an omitted Schedule FA. The proviso inserted w.e.f. 1-10-2024 disapplies it where
+the aggregate value of foreign assets other than immovable property does not
+exceed Rs 20,00,000.
+
+The proviso fixes no valuation date for non-bank assets, so both a peak-during-
+the-year and a closing-at-31-December basis are shown. Neither is settled law.
+
+This report aggregates EVERY non-immovable holding in the ledger. On the better
+view the proviso aggregates only the UNDISCLOSED assets, so for a year whose
+Schedule FA was partly completed the figure that matters is lower than the one
+below, and this tool cannot know which holdings were disclosed. An UNDER verdict
+is safe on either reading; treat an OVER verdict for such a year as a prompt to
+compute the undisclosed subset by hand. See docs/KNOWN-ISSUES.md issue 5.
+
+Both figures are taken from rules/AY2027-28.json, verified
+2026-08-03. Sources are in that file; docs/ANNUAL-REVIEW.md says what to
+re-check. Neither figure is computed or remembered.
+
+==============================================================================
+SUMMARY
+==============================================================================
+
+Year           Peak basis   Verdict       31 Dec basis   Verdict
+------------------------------------------------------------------------------
+2022        -- no data --   NO DATA                 --   NO DATA
+2023            16,42,671     UNDER          16,14,319     UNDER
+2024            26,02,418      OVER          24,83,833      OVER
+2025            65,34,958      OVER          32,12,518      OVER
+------------------------------------------------------------------------------
+
+==============================================================================
+CALENDAR YEAR 2022
+==============================================================================
+
+  NO DATA -- no holdings recorded; the earliest transaction in your data is 2023-05-22.
+
+  This is not a nil holding. It means nothing in your transactions.csv
+  covers this year. If an account was open and funded in this year, its
+  acquisitions have to be added before the year can be judged.
+
+==============================================================================
+CALENDAR YEAR 2023
+==============================================================================
+
+  PEAK basis (sum of per-holding peaks)
+    Aggregate value       : Rs 16,42,671 (16.43 lakh)
+    Verdict               : UNDER Rs 20,00,000
+    HEADROOM below limit  : Rs 3,57,329 (3.57 lakh)
+
+  PEAK basis, conservative (max INR product)
+    Aggregate value       : Rs 16,44,328 (16.44 lakh)
+    Verdict               : UNDER Rs 20,00,000
+    HEADROOM below limit  : Rs 3,55,672 (3.56 lakh)
+
+  CLOSING basis (31 December)
+    Aggregate value       : Rs 16,14,319 (16.14 lakh)
+    Verdict               : UNDER Rs 20,00,000
+    HEADROOM below limit  : Rs 3,85,681 (3.86 lakh)
+
+  Per account:
+    Account            Securities pk     Cash pk          Peak        31 Dec
+    fidelity_espp           4,51,685           0      4,51,685      4,28,173
+    indmoney_us            11,90,986           0     11,90,986     11,86,146
+
+  Per holding (one line per lot):
+    Account      Ticker  Acquired             Peak Peak date          31 Dec
+    fidelity_esp JNJ     2023-06-30       2,57,061 2023-07-28       2,33,549
+    fidelity_esp JNJ     2023-12-29       1,94,624 2023-12-30       1,94,624
+    indmoney_us  IVV     2023-05-22      11,90,986 2023-12-28      11,86,146
+
+  Notes affecting this year:
+    - no cash balance supplied for fidelity_espp, indmoney_us -- these totals count securities only and understate the account by whatever uninvested cash it held
+
+==============================================================================
+CALENDAR YEAR 2024
+==============================================================================
+
+  PEAK basis (sum of per-holding peaks)
+    Aggregate value       : Rs 26,02,418 (26.02 lakh)
+    Verdict               : OVER Rs 20,00,000
+    EXCESS over threshold : Rs 6,02,418 (6.02 lakh)
+
+  PEAK basis, conservative (max INR product)
+    Aggregate value       : Rs 26,06,530 (26.07 lakh)
+    Verdict               : OVER Rs 20,00,000
+    EXCESS over threshold : Rs 6,06,530 (6.07 lakh)
+
+  CLOSING basis (31 December)
+    Aggregate value       : Rs 24,83,833 (24.84 lakh)
+    Verdict               : OVER Rs 20,00,000
+    EXCESS over threshold : Rs 4,83,833 (4.84 lakh)
+
+  Per account:
+    Account            Securities pk     Cash pk          Peak        31 Dec
+    etrade_stockplan        2,53,044           0      2,53,044      2,52,192
+    fidelity_espp           8,05,135           0      8,05,135      7,26,975
+    indmoney_us            15,44,239           0     15,44,239     15,04,666
+
+  Per holding (one line per lot):
+    Account      Ticker  Acquired             Peak Peak date          31 Dec
+    etrade_stock CSCO    2024-08-15       2,53,044 2024-12-05       2,52,192
+    fidelity_esp JNJ     2023-06-30       2,51,723 2024-09-10       2,21,789
+    fidelity_esp JNJ     2023-12-29       2,09,769 2024-09-10       1,84,824
+    fidelity_esp JNJ     2024-06-28       1,95,784 2024-09-10       1,72,503
+    fidelity_esp JNJ     2024-12-31       1,47,859 2024-12-31       1,47,859
+    indmoney_us  IVV     2023-05-22      15,44,239 2024-12-07      15,04,666
+
+  Notes affecting this year:
+    - no cash balance supplied for etrade_stockplan, fidelity_espp, indmoney_us -- these totals count securities only and understate the account by whatever uninvested cash it held
+
+==============================================================================
+CALENDAR YEAR 2025
+==============================================================================
+
+  PEAK basis (sum of per-holding peaks)
+    Aggregate value       : Rs 65,34,958 (65.35 lakh)
+    Verdict               : OVER Rs 20,00,000
+    EXCESS over threshold : Rs 45,34,958 (45.35 lakh)
+
+  PEAK basis, conservative (max INR product)
+    Aggregate value       : Rs 65,40,751 (65.41 lakh)
+    Verdict               : OVER Rs 20,00,000
+    EXCESS over threshold : Rs 45,40,751 (45.41 lakh)
+
+  CLOSING basis (31 December)
+    Aggregate value       : Rs 32,12,518 (32.13 lakh)
+    Verdict               : OVER Rs 20,00,000
+    EXCESS over threshold : Rs 12,12,518 (12.13 lakh)
+
+  Per account:
+    Account            Securities pk     Cash pk          Peak        31 Dec
+    etrade_stockplan       12,20,478           0     12,20,478      7,71,890
+    fidelity_espp          11,41,034           0     11,41,034     10,92,433
+    indmoney_us            41,73,446           0     41,73,446     13,48,195
+
+  Per holding (one line per lot):
+    Account      Ticker  Acquired             Peak Peak date          31 Dec
+    etrade_stock CSCO    2024-08-15       3,45,700 2025-11-19       1,72,297
+    etrade_stock CSCO    2025-02-15       2,50,260 2025-08-08              0
+    etrade_stock CSCO    2025-05-15       2,51,243 2025-12-10       2,41,216
+    etrade_stock CSCO    2025-06-30       1,57,924 2025-12-10       1,51,621
+    etrade_stock CSCO    2025-08-15       2,15,351 2025-12-10       2,06,756
+    fidelity_esp JNJ     2023-06-30       3,48,112 2025-12-15       3,33,285
+    fidelity_esp JNJ     2023-12-29       2,90,093 2025-12-15       2,77,737
+    fidelity_esp JNJ     2024-06-28       2,70,754 2025-12-15       2,59,221
+    fidelity_esp JNJ     2024-12-31       2,32,075 2025-12-15       2,22,190
+    indmoney_us  AVGO    2025-03-05      16,38,603 2025-08-12              0
+    indmoney_us  IVV     2023-05-22      17,93,054 2025-10-08       6,12,816
+    indmoney_us  IVV     2025-01-08       7,41,789 2025-12-24       7,35,379
+
+  Notes affecting this year:
+    - no cash balance supplied for etrade_stockplan, fidelity_espp, indmoney_us -- these totals count securities only and understate the account by whatever uninvested cash it held
+
+==============================================================================
+HOW TO READ THIS
+==============================================================================
+
+- 'Sum of per-holding peaks' adds each holding's own best day. Holdings do not
+  all peak on the same day, so this is at or above any single-day total. It is
+  the conservative direction for a threshold test.
+- Cash is included only for accounts listed in cash_balances.csv. Any account
+  missing from that file is counted on its securities alone and is understated.
+- Values are rupees, converted at the SBI TT buying rate, per the Schedule FA
+  rule. Every figure traces to the per-lot CSV written alongside this report.
+- Every figure is reconstructed from the taxpayer's own broker statements only.
+
+Peak basis used for the Schedule FA rows themselves: usd
+Generated 2026-08-24 22:44:00 by itr-prep.
+
+Arithmetic, not advice. Where a year straddles the line, or is close to it,
+have a professional confirm the valuation basis before relying on the verdict.

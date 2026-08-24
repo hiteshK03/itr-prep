@@ -268,7 +268,76 @@ def main() -> int:
         return 1
     print(f"All {total} validation cases behaved correctly against {against} "
           f"({len(must_pass)} accepted, {len(must_fail)} rejected, 2 structural).")
-    return 0
+
+    if official:
+        failures += multiple_of_teeth(schema)
+    return failures and 1 or 0
+
+
+def _row_112a(**overrides) -> dict:
+    """A schema-complete Schedule 112A detail row (definition Schedule112A115ADType),
+    with four-decimal per-unit values -- the exact shape KNOWN-ISSUES.md issue 1 is about."""
+    row = {
+        "ShareOnOrBefore": "AE",
+        "ISINCode": "INFSYNTHTST1",
+        "ShareUnitName": "SYNTHETIC EQUITY FUND TEST SCHEME",
+        "NumSharesUnits": 1234.5678,
+        "SalePricePerShareUnit": 45.6789,
+        "TotSaleValue": 56394,
+        "CostAcqWithoutIndx": 30000,
+        "AcquisitionCost": 12345.6789,
+        "LTCGBeforelowerB1B2": 26394,
+        "FairMktValuePerShareunit": 40.1234,
+        "TotFairMktValueCapAst": 49535,
+        "ExpExclCnctTransfer": 0.0,
+        "TotalDeductions": 0,
+        "Balance": 26394,
+    }
+    row.update(overrides)
+    return row
+
+
+def multiple_of_teeth(schema: dict) -> int:
+    """KNOWN-ISSUES.md issue 1, decided: the department's Schedule 112A schema puts
+    multipleOf 0.0001 on five per-unit fields, and jsonschema's binary-float check wrongly
+    rejects roughly 28% of legal four-decimal values. itrprep/validate.py overrides the
+    check with exact decimal arithmetic. These cases prove both directions of the fix.
+    Runs only against the official schema -- the constraint is the department's."""
+    defs = schema["definitions"]
+    subschema = {
+        "$schema": schema.get("$schema"),
+        "definitions": defs,
+        "$ref": "#/definitions/Schedule112A115ADType",
+    }
+
+    # 12.34 is the smallest failing value named in the issue; add the kinds the registry
+    # cares about: unit counts and 31-Jan-2018 NAVs, both naturally four-decimal.
+    four_decimal = [12.34, 99.9999, 0.1234, 37495.6585, 826852.1246, 236439.0]
+    over_precise = [12.34567, 0.00001, 1.234567891, 0.1 + 0.2]
+
+    failures = 0
+    for v in four_decimal:
+        row = _row_112a(NumSharesUnits=v, AcquisitionCost=v,
+                        SalePricePerShareUnit=v, FairMktValuePerShareunit=v,
+                        ExpExclCnctTransfer=v)
+        errs = [e for e in validate._format_errors(validate._validator(subschema), row)
+                if "multiple of" in e]
+        if errs:
+            failures += 1
+            print(f"UNEXPECTED REJECT  legal four-decimal 112A value {v!r}: {errs[0][:90]}")
+        else:
+            print(f"accepted (correct)   legal four-decimal 112A value {v!r}")
+    for v in over_precise:
+        row = _row_112a(NumSharesUnits=v)
+        errs = [e for e in validate._format_errors(validate._validator(subschema), row)
+                if "multiple of" in e]
+        if not errs:
+            failures += 1
+            print(f"UNEXPECTED ACCEPT  over-precise 112A value {v!r}")
+        else:
+            print(f"rejected (correct)   over-precise 112A value {v!r}")
+    print()
+    return failures
 
 
 if __name__ == "__main__":

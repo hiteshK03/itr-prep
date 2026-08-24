@@ -54,6 +54,31 @@ Schedule 112A row:
 
 Decide it deliberately, in daylight, before Schedule 112A JSON is emitted.
 
+**Decided, 25 August 2026** (with the mutual fund pipeline, the first Schedule 112A emitter).
+None of the four options above was taken. The defect is not in the constraint and not in the
+values: `multipleOf: 0.0001` says "four decimal places", and a four-decimal value is a
+multiple of 0.0001 in the only arithmetic that matters — decimal arithmetic. The defect is
+that the validator implements the check as `int(x / 0.0001) != x / 0.0001` in binary floats,
+where `0.0001` is not representable and the quotient is not exact. So the fix is to correct
+the validator, not the document:
+
+`itrprep/validate.py` extends the validator class the schema itself asks for with one
+override — `multipleOf` evaluated exactly on the value's shortest round-trip decimal
+representation (`Decimal(repr(x))`), which is the literal the serialised JSON carries and
+therefore the figure the department receives. Consequences, each checked by
+`tests/test_validation_teeth.py`:
+
+- Every legal four-decimal value passes (the 27.9% false-failure rate is gone).
+- A genuinely over-precise value — five decimals, or float noise such as `0.1 + 0.2` —
+  still fails.
+- The department's schema file is loaded byte-for-byte and never edited, so nothing here
+  validates against a local invention.
+
+What this deliberately does *not* do is round or rewrite a user's figures: the emitter must
+produce four-decimal values (unit counts and 2018 NAVs are), and validation confirms that
+rather than repairing it. If a value cannot be expressed in four decimals the build fails
+with the schema error, loudly, which is the behaviour every other part of the pipeline has.
+
 ---
 
 ## 2. Whether the Finance Act, 2026 amended the Specified Mutual Fund definition

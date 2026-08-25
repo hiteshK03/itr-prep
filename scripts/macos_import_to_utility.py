@@ -175,11 +175,13 @@ def wait_for(text: str, timeout: float = 45, poll: float = 1.5) -> bool:
 
 
 def fresh_launch() -> None:
-    """Kill any running instance and start a pristine one.
+    """Kill any running instance and start a pristine one, straight into the real app.
 
-    The DMG ships two executables: a small updater (process `ITDe-Filing-2026`) that shows
-    the splash, and the real app (`ITDe-Filing-2026-Setup-1.2.3`) that launches after
-    Continue. A pristine run means killing both.
+    The DMG ships two executables: a small updater (process `ITDe-Filing-2026`) that only
+    shows a version splash with a Continue button, and the real app
+    (`ITDe-Filing-2026-Setup-<version>`). Launching the app bundle normally goes through the
+    updater, which adds nothing but the splash. Starting the real binary directly skips it
+    and lands straight on the Home screen. A pristine run means killing both.
     """
     subprocess.run(["osascript", "-e", f'tell application "{PROCESS}" to quit'],
                    capture_output=True)
@@ -188,55 +190,21 @@ def fresh_launch() -> None:
     time.sleep(2)
     subprocess.run(["pkill", "-f", "ITDe-Filing"], capture_output=True)
     time.sleep(2)
-    subprocess.run(["open", "-a", APP_PATH], check=True)
-    deadline = time.time() + 40
+    binary = f"{APP_PATH}/Contents/MacOS/{PROCESS}"
+    if not os.path.exists(binary):
+        raise SystemExit(f"the utility's main binary is missing: {binary}")
+    subprocess.Popen([binary], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                     cwd=f"{APP_PATH}/Contents/MacOS")
+    deadline = time.time() + 60
     while time.time() < deadline:
-        if SPLASH_PROCESS in running_processes():
+        if PROCESS in running_processes():
             return
         time.sleep(1)
-    raise SystemExit("the utility did not reach its splash screen")
+    raise SystemExit("the utility did not launch")
 
 
 def frontmost() -> None:
     osa(f'tell application "System Events" to tell process "{PROCESS}" to set frontmost to true')
-
-
-def click_splash_continue() -> None:
-    """The splash is the updater process; Continue hands off to the main app.
-
-    The updater's webview needs a few seconds to render its Continue button, and a click
-    that lands before it is ready is silently swallowed, so click in a loop until the real
-    app process exists.
-    """
-    deadline = time.time() + 120
-    while time.time() < deadline:
-        if PROCESS in running_processes():
-            return
-        try:
-            osa(f'''
-tell application "System Events"
-  tell process "{SPLASH_PROCESS}"
-    set frontmost to true
-    delay 0.3
-    set uiElems to entire contents of front window
-    repeat with e in uiElems
-      try
-        if (role of e) is "AXButton" and (description of e) is not in {{"close button", "full screen button", "minimize button"}} then
-          click e
-          exit repeat
-        end if
-      end try
-    end repeat
-  end tell
-end tell''', timeout=30)
-        except Exception:
-            pass
-        # Give the hand-off time to happen before re-clicking.
-        for _ in range(6):
-            time.sleep(1)
-            if PROCESS in running_processes():
-                return
-    raise SystemExit("the main utility did not launch after Continue")
 
 
 def press_rightmost_unlabeled(min_y: int = 0, min_w: int = 0) -> str:
@@ -867,9 +835,10 @@ def main() -> int:
     print("1/6 fresh launch of the utility")
     fresh_launch()
 
-    print("2/6 splash -> Home -> ITR selection")
-    click_splash_continue()
-    if not wait_for("File your tax return", timeout=45):
+    print("2/6 Home -> ITR selection")
+    # The direct launch (fresh_launch) skips the updater's version splash, so there is
+    # nothing to click through before the Home screen.
+    if not wait_for("File your tax return", timeout=90):
         raise SystemExit("did not reach the Home screen")
     # Home -> File Return (rightmost unlabeled button). It can sit below the visible fold,
     # and the traffic-light window buttons are excluded by their descriptions, so position

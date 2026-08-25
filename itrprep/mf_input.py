@@ -86,14 +86,14 @@ def _parse_date(raw: str, where: str) -> dt.date:
     try:
         return dt.date.fromisoformat(raw.strip())
     except (ValueError, AttributeError):
-        raise MfInputError(f"{where}: date {raw!r} is not ISO YYYY-MM-DD")
+        raise MfInputError(f"{where}: date {raw!r} is not ISO YYYY-MM-DD") from None
 
 
 def _parse_decimal(raw: str, where: str) -> Decimal:
     try:
         return Decimal(raw.strip())
     except (InvalidOperation, AttributeError):
-        raise MfInputError(f"{where}: {raw!r} is not a number")
+        raise MfInputError(f"{where}: {raw!r} is not a number") from None
 
 
 def _parse_bool(raw: str, where: str) -> bool:
@@ -138,7 +138,7 @@ def load_schemes(path: str) -> dict[str, SchemeDecl]:
                     fmv_2018_01_31=fmv,
                 )
             except capgain.MfError as exc:
-                raise MfInputError(f"{where}: {exc}")
+                raise MfInputError(f"{where}: {exc}") from exc
     return schemes
 
 
@@ -201,7 +201,7 @@ def load_ledgers(schemes_path: str, transactions_path: str) -> list[Ledger]:
                                            _parse_decimal(price_raw, where),
                                            expense, source_ref))
             except capgain.MfError as exc:
-                raise MfInputError(f"{where}: {exc}")
+                raise MfInputError(f"{where}: {exc}") from exc
     # Only schemes with activity reach the engine; a declared scheme with no
     # transactions is nothing to compute on (and nothing to silently drop).
     active = [led for led in ledgers.values()

@@ -38,7 +38,7 @@ NUM_RE = re.compile(
 )
 
 # Words that identify the numeric columns. Rows containing these are headers.
-NUMERIC_HEADER_WORDS = frozenset({"Amount", "NAV", "Price", "Units", "(`)", "Duty", "(`)"})
+NUMERIC_HEADER_WORDS = frozenset({"Amount", "NAV", "Price", "Units", "(`)", "Duty"})
 
 # Page furniture that must never be mistaken for a transaction row.
 BANNER_MARKERS = (
@@ -163,7 +163,7 @@ def _group_lines(words, y_tolerance=2.5):
     current_page = None
     bucket = []
 
-    for pageno, x0, y0, x1, y1, word in words:
+    for pageno, x0, y0, _x1, _y1, word in words:
         if current_y is None or pageno != current_page or abs(y0 - current_y) > y_tolerance:
             if bucket:
                 lines.append((current_page, current_y, bucket))
@@ -295,7 +295,6 @@ def transcribe_cas(pdf_path: str, password: str | None = None) -> CasTranscript:
     pending_header: str | None = None  # folio header seen, ISIN not yet seen
     pending_summary_name: str | None = None  # "Scheme Name : ..." awaiting its ISIN line
     pending_label: str | None = None  # transaction label awaiting its date row
-    pending_ref_parts: list[str] = []
     in_txn_table = False  # only date rows inside a real transaction table count
 
     def flush_scheme() -> None:
@@ -341,7 +340,6 @@ def transcribe_cas(pdf_path: str, password: str | None = None) -> CasTranscript:
                 pending_header = m_header.group(1)
                 current_scheme_name_parts = [m_header.group(2).strip()]
                 current_folio = m_header.group(1)
-                pending_ref_parts = []
                 pending_summary_name = None
                 in_txn_table = True  # this header opens a transaction table
                 continue
@@ -417,7 +415,6 @@ def transcribe_cas(pdf_path: str, password: str | None = None) -> CasTranscript:
                     page=pageno,
                 ))
                 pending_label = None
-                pending_ref_parts = []
                 continue
 
             # Reference/transaction-number line (digits only, left zone). In the

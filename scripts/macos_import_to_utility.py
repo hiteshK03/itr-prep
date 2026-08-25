@@ -354,7 +354,7 @@ def attach_json(json_path: str) -> None:
     A discard-earlier-details dialog can interpose instead of the panel; when it does,
     confirm it and press Attach File again.
     """
-    for attempt in range(3):
+    for _attempt in range(3):
         # Find the Attach File button: the unlabeled button nearest the "Attach file"
         # label. (Strict containment fails by 1px of rendering jitter.)
         attach_result = osa(f'''

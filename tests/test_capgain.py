@@ -166,7 +166,7 @@ def main() -> int:
     # ------------------------------------------------------------ grandfathering
     print("\n[grandfathering, section 90(7)]")
     # cost = higher of (actual cost) and (lower of valuation-date FMV, proceeds).
-    base = dict(isin="INF123F01237", name="SYNTHETIC GRANDFATHERED FUND")
+    base = {"isin": "INF123F01237", "name": "SYNTHETIC GRANDFATHERED FUND"}
 
     def be_scheme(fmv):
         return _scheme(fmv=fmv, **base)

@@ -1299,7 +1299,7 @@ def cmd_cas_import(args) -> int:
         print(f"CAS problem:\n\n{exc}\n", file=sys.stderr)
         return 1
 
-    print(f"\nWrote draft CSVs:")
+    print("\nWrote draft CSVs:")
     print(f"  {schemes_path}")
     print(f"  {txns_path}")
     print(

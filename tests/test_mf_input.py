@@ -33,7 +33,8 @@ def check(label: str, condition: bool, detail: str = "") -> None:
         print(f"  FAIL  {label}" + (f"  ({detail})" if detail else ""))
 
 
-def refuses(label: str, fn, needle: str = "", exc_type: type[Exception] = mf_input.MfInputError) -> None:
+def refuses(label: str, fn, needle: str = "",
+            exc_type: type[Exception] = mf_input.MfInputError) -> None:
     try:
         fn()
     except exc_type as exc:

@@ -480,7 +480,7 @@ def fy_window(financial_year: str) -> tuple[dt.date, dt.date]:
         start = dt.date(int(start_year), 4, 1)
         end = dt.date(int(start_year) + 1, 3, 31)
     except (ValueError, AttributeError):
-        raise MfError(f"financial_year {financial_year!r} is not 'YYYY-YY'")
+        raise MfError(f"financial_year {financial_year!r} is not 'YYYY-YY'") from None
     return start, end
 
 

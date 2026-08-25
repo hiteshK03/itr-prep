@@ -1604,57 +1604,52 @@ successor at section 90(7)–(8) governs mutual fund units, so it is now in.
 
 ## Verification
 
-Eight suites, 1,317 checks, all runnable offline once the caches are warm, and all of them
-on macOS and Linux alike — CI runs the whole set on both:
+Eleven suites, all runnable offline once the caches are warm, and all of them on macOS and
+Linux alike — CI runs the whole set on both:
 
 ```bash
-.venv/bin/python tests/test_validation_teeth.py        # 26 cases
-.venv/bin/python tests/test_pipeline.py                # 80 checks
-.venv/bin/python tests/test_splits_cash_threshold.py   # 67 checks
-.venv/bin/python tests/test_doctor_readback.py         # 153 checks
-.venv/bin/python tests/test_multisection_adapter.py    # 111 checks
-.venv/bin/python tests/test_multisheet_workbook.py     # 117 checks
-.venv/bin/python tests/test_rules_registry.py          # 673 checks
-.venv/bin/python tests/test_unlock_credentials.py      # 90 checks
+.venv/bin/python tests/test_validation_teeth.py        # schema has teeth
+.venv/bin/python tests/test_pipeline.py                # end-to-end invariants
+.venv/bin/python tests/test_splits_cash_threshold.py   # splits, cash, threshold report
+.venv/bin/python tests/test_doctor_readback.py         # preflight, sniffing, readback, platform boundary
+.venv/bin/python tests/test_multisection_adapter.py    # per-section exports
+.venv/bin/python tests/test_multisheet_workbook.py     # multi-sheet workbooks
+.venv/bin/python tests/test_rules_registry.py          # citations, staleness, code_status
+.venv/bin/python tests/test_unlock_credentials.py      # a password cannot escape the process
+.venv/bin/python tests/test_capgain.py                 # mutual fund FIFO engine, grandfathering
+.venv/bin/python tests/test_mf_input.py                # MF CSV contract, FY window, 112A
+.venv/bin/python tests/test_cas_pdf.py                 # CAS statement transcription
 ```
 
-The doctor suite gained 52 checks and the registry suite 94, all from the two changes above.
-The doctor suite now plants an Indian security of every shape the scope guard claims to
-detect — an `INE` ISIN, an `INF` ISIN, an `IN` ISIN that is neither, an ISIN carried only on
-the issuer row, an INR row, a rupee sign, an NSE suffix, a BSE suffix and an issuer whose
-country is `INDIA` — and asserts each is refused, by `doctor`, by `build`, by `threshold` and
-by `run`. It then asserts the negative half, which is the half that could break the tool:
+The doctor suite plants an Indian security of every shape the scope guard claims to detect —
+an `INE` ISIN, an `INF` ISIN, an `IN` ISIN that is neither, an ISIN carried only on the
+issuer row, an INR row, a rupee sign, an NSE suffix, a BSE suffix and an issuer whose country
+is `INDIA` — and asserts each is refused, by `doctor`, by `build`, by `threshold` and by
+`run`. It then asserts the negative half, which is the half that could break the tool:
 `IVV`, `JNJ`, `CSCO` and `AVGO` still trip nothing, a foreign fund whose *name* says "Fund",
-"Growth", "Direct Plan" and "IDCW" still passes, a hand-written `INVALID` in the `isin` column
-is not mistaken for an ISIN, and `BRITISH INDIAN OCEAN TERRITORY` is not India. The registry
-suite's addition is the `code_status` drift check described above.
+"Growth", "Direct Plan" and "IDCW" still passes, a hand-written `INVALID` in the `isin`
+column is not mistaken for an ISIN, and `BRITISH INDIAN OCEAN TERRITORY` is not India.
 
-The registry suite was 167 checks before the second registry existed. Two things account for
-most of that earlier jump:
-there is a second registry, and the suite now runs the citation, review-class and staleness
-blocks against **every** registry on disk rather than only the newest. Before, adding
-`rules/AY2027-28.json` would silently have retired `rules/AY2026-27.json` from the suite.
-The rest is new. The **act-transition** block asserts that each registry cites the Act its
-year is decided under, that every entry in the later registry records where it came from,
-that nothing was dropped across the change and that the Black Money Act entries are marked
-as separate legislation rather than renumbered. The **encoded-trap** block fails if either
-mutual fund trap is deleted or hollowed out. And the other-schedules summary is now asserted
-to name the form, rule and deadline the registry gives — Form 67 and rule 128(9) for
+Every suite runs the citation, review-class, `code_status` and staleness blocks against
+**every** registry on disk rather than only the newest, so adding `rules/AY2028-29.json`
+cannot silently retire `rules/AY2026-27.json` from coverage. The **act-transition** block
+asserts that each registry cites the Act its year is decided under, that every entry in the
+later registry records where it came from, and that the Black Money Act entries are marked as
+separate legislation rather than renumbered. The **encoded-trap** block fails if either
+mutual fund trap is deleted or hollowed out, and the other-schedules summary is asserted to
+name the form, rule and deadline the registry gives — Form 67 and rule 128(9) for
 AY 2026-27, and no repealed provision at all for AY 2027-28.
 
-**That is the count with everything present**, and what a bare clone lacks changes two of the
-numbers above. Without the optional unlock extras, `test_unlock_credentials.py` skips its 38
-encrypted round-trip checks; without the ITD schema in `schemas/`, `test_pipeline.py` drops
-three schema-dependent checks. Both say so when they skip and neither fails, so:
+Counts are deliberately not listed here. Price data comes from a live source, so check
+numbers move between runs and releases, and a README that quotes them rots — what matters is
+that every suite finishes with `All ... checks passed`.
 
-| Configuration | Checks |
-|---|---|
-| Bare clone: `./setup.sh` and nothing else | **1,276** |
-| Plus `requirements-unlock.txt` — what CI runs | **1,314** |
-| Plus the ITD schema in `schemas/` | **1,317** |
-
-CI installs the unlock extras deliberately — a proof that skips is not one — and does not
-fetch the schema, since the department's artefact is not ours to download in a workflow.
+**What a bare clone lacks** changes some suites' coverage. Without the optional unlock
+extras, `test_unlock_credentials.py` skips its encrypted round-trip checks; without the ITD
+schema in `schemas/`, `test_pipeline.py` drops its schema-dependent checks. Both say so when
+they skip and neither fails. CI installs the unlock extras deliberately — a proof that skips
+is not one — and does not fetch the schema, since the department's artefact is not ours to
+download in a workflow.
 
 "Offline" means "reads a cache", and a fresh clone has none — `data/` is gitignored, because
 it is derived and because a real user's cached tickers would say what they hold. `./setup.sh`
@@ -1665,20 +1660,15 @@ run `itr-prep fx-update` and one `itr-prep threshold` over each synthetic datase
 mutates a known-good row one field at a time and asserts the schema refuses it:
 `BENIFICIARY` spelled correctly, an integer country code, a float rupee amount, a
 `DD/MM/YYYY` date, a missing required field, an extra field, an over-length string, an
-out-of-enum nature code. All 26 cases behave correctly.
+out-of-enum nature code, an over-precise 112A value.
 
-**Which schema, and the honest version of what this proves.** These cases used to run only
-when you had downloaded the department's schema, and CI deliberately does not fetch it — so
-this README described validation cases that no automation had ever run, on the one module
-whose bug history is worst. They now run in CI against
+**Which schema, and the honest version of what this proves.** These cases run in CI against
 [`tests/fixtures/fa_contract.fixture.json`](tests/fixtures/fa_contract.fixture.json), which
 is **not the department's schema and must never be used as one.** It is a hand-written
 transcription of the field contract in
 [`docs/VERIFIED_FINDINGS.md`](docs/VERIFIED_FINDINGS.md) §2–§4, which cites the VBA line
 numbers it was read from, and it is a strict subset — the country-code enum has 5 of the
-department's 249 entries.
-
-So be precise about what each run buys:
+department's 249 entries. So be precise about what each run buys:
 
 - **Against the fixture** (a bare clone, and CI): the validator has teeth. draft-04 is
   detected from the schema's own declaration, the ScheduleFA subtree is re-rooted correctly,
@@ -1687,120 +1677,64 @@ So be precise about what each run buys:
 - **Against the ITD schema** (once you download it): the above, plus the only statement that
   matters at filing time.
 
-The suite names which one it used in its own summary line, and prints an unmissable banner
-when it is the fixture. Two of its 26 cases exist to keep that honest: the fixture is not
-named `ITR-2_*Main*.json` and does not live in `schemas/`, so `build` cannot discover it and
-report a return as validated when nothing has validated it — and the suite fails if that ever
-stops being true, including if somebody copies the fixture into `schemas/` to make validation
-"work".
-
-A subtle one it also covers: **the ITD schema is draft-04, not draft-07.** It declares
-`http://json-schema.org/draft-04/schema#` and uses draft-04's boolean form of
-`exclusiveMinimum` in 659 places. A draft-07 validator reads `"exclusiveMinimum": false` as
-"must exceed 0" and wrongly rejects every legitimately-zero amount — which is exactly what
-happened for 2023 and 2024 before this was found. The validator is chosen from the
-schema's own declaration. The contract fixture reproduces that declaration and the boolean
-form, so the case that used to fail — a Table A2 account with nothing credited all year — is
-now asserted in CI rather than only on a machine that happens to have the real schema.
+The suite names which one it used in its own summary line, prints an unmissable banner when
+it is the fixture, and fails if `build` could ever discover the fixture as a real schema. A
+subtle one it also covers: **the ITD schema is draft-04, not draft-07**, and uses the
+boolean form of `exclusiveMinimum`. A draft-07 validator reads `"exclusiveMinimum": false`
+as "must exceed 0" and wrongly rejects every legitimately-zero amount — which is exactly
+what happened for 2023 and 2024 before this was found. The validator is chosen from the
+schema's own declaration.
 
 **`test_pipeline.py`** runs the synthetic dataset (`tests/synthetic/`) through the whole
-pipeline for 2023, 2024 and 2025. It covers multiple lots per ticker, a mid-year sale of an
-identified lot, a mid-year sale that must go FIFO, a ticker bought and fully exited inside
-the year, four quarterly dividends across four lots, holdings spanning the entire year, and
-lots acquired in earlier years. Rather than golden numbers — which would rot, since prices
-come from a live source — it asserts conservation properties: apportioned dividends sum to
-dividends received, attributed proceeds sum to sales made, peak ≥ closing, fully-exited lots
-have a nil closing balance, peak share count never exceeds the lot size. It asserts the
-provenance trail survives the whole pipeline: every lot names the row it was built from,
-every computed row names the sale and dividend lines behind its apportioned figures, and
-the audit CSV's own columns agree with them. It also exercises the adapters against
-realistic broker fixtures and checks that bad input is rejected loudly.
+pipeline for 2023, 2024 and 2025. Rather than golden numbers — which would rot, since
+prices come from a live source — it asserts conservation properties: apportioned dividends
+sum to dividends received, attributed proceeds sum to sales made, peak ≥ closing,
+fully-exited lots have a nil closing balance, and the provenance trail (every figure names
+the export row it came from) survives end to end.
 
 **`test_splits_cash_threshold.py`** covers the three later additions against a second
-dataset (`tests/synthetic_split/`) built around a real corporate action: 10 AVGO shares
-bought in November 2023, held through the 10-for-1 split of 15 July 2024. It asserts the
-split is found with the right date and ratio, that the build refuses to run without
-`--split-basis`, that the refusal names ticker/date/ratio, that restatement preserves cost
-while scaling quantity, and — the point of the exercise — that **choosing the wrong basis is
-a factor-of-ten error** (₹21,22,463 against ₹2,12,246 for the same holding). It also checks
-that a lot acquired *after* a split is left alone. For cash it asserts Table A2 rises by
-exactly the cash figures, Table A3 does not move, an account holding only cash still gets a
-row, and that bad input is rejected. For the threshold report it asserts totals reconcile to
-their account and lot breakdowns, peak ≥ closing, conservative ≥ literal, that a year with
-no data reports `NO DATA` rather than zero, and that the straddle warning fires — the
-dataset is sized so 2024 lands **OVER** on the peak basis and **UNDER** at 31 December.
+dataset (`tests/synthetic_split/`) built around a real corporate action: 10 AVGO shares held
+through the 10-for-1 split of 15 July 2024. The point of the exercise: **choosing the wrong
+split basis is a factor-of-ten error** (₹21,22,463 against ₹2,12,246 for the same holding),
+and the build refuses to run without `--split-basis`. It also asserts cash lands in Table A2
+only, and that a threshold-report year with no data says `NO DATA` rather than zero.
 
-**`test_doctor_readback.py`** covers the preflight command, the header sniffer and the import
-verifier. For `doctor` it asserts that untouched templates are a hard error, that a missing
-issuer ticker and an unresolvable `account_id` are both named, that an oversell is an error
-while missing cash balances are only a warning, and that a split surfaces before the build.
-For detection it gives an E\*TRADE export a Fidelity filename and a Fidelity export an
-E\*TRADE filename, and asserts both are still classified correctly — then that an
-unclassifiable file is refused rather than guessed. It also builds a real XLSX with the
-stdlib and asserts dates arrive as `2025-01-08`, not as the serial `45665`.
+**`test_doctor_readback.py`** covers the preflight command, the header sniffer and the
+import verifier. For detection it swaps an E\*TRADE export's filename with a Fidelity one
+and back and asserts both are still classified correctly, then that an unclassifiable file
+is refused rather than guessed. For the verifier it synthesises the failure shapes seen in
+practice — dropped last row, wrong rupee figure in the second row, bare `2` country cell,
+serial-number date, stripped zip zero, missing item 19 — and asserts each is caught,
+including a JSON that disagrees with its own audit CSV even when the spreadsheet faithfully
+matches that JSON. It closes with the platform boundary: the behaviour on Windows, WSL, Mac
+and plain Linux is asserted from whichever host runs the suite, and every module in
+`itrprep/` must import everywhere with none but `host.py` mentioning
+`win32com`/`powershell.exe`/`Excel.Application`.
 
-For the verifier it synthesises the failure shapes seen in practice and asserts each is
-caught: a dropped last row, a last row present but blank, a wrong rupee figure in the
-*second* row, a country cell left as a bare `2`, a date arriving as a serial number, a
-date transposed to MM/DD/YYYY, a stripped leading zero in a zip code, and a missing item 19.
-It also asserts the verifier catches a JSON that disagrees with the audit CSV it was built
-from *even when the spreadsheet faithfully matches that JSON* — so the whole chain is
-checked, not just its last link.
-
-It closes with the platform boundary. Every host is described by injecting the platform name
-and a `which`, so the behaviour on Windows, on WSL, on a Mac and on a plain Linux box is all
-asserted from whichever one you happen to be on — a check that only runs on the machine it
-describes proves nothing about the others. It asserts the refusal names the host, points at
-both the department's macOS utility and a Windows VM, and does not claim the macOS route has
-been tested here; that `itr-prep import` exits 2 rather than raising; that the driver refuses
-before it complains about a missing file; and — the structural one — that every module in
-`itrprep/` imports on the host running the suite and that none but `host.py` so much as
-mentions `win32com`, `powershell.exe` or `Excel.Application`.
-
-**`test_multisection_adapter.py`** covers the per-section reader. A stock-plan export carries
-one header per plan type or grant, so it asserts each block resolves its own column layout,
-that a wider later section keeps its own positions instead of being truncated against the
-first one's, and that a section may reorder its columns freely. It covers the gross/withheld/
-net distinction a sell-to-cover turns on — one row becoming an acquisition of the gross count
-plus a same-day disposal of the withheld portion, bound to the lot that vest created rather
-than to an older vest of the same award — and the row types that used to classify as nothing
-at all. Above all it asserts that a row which cannot be read is **counted, named and
-blocking**: the run exits non-zero behind a banner, and `--allow-dropped-rows` is the only way
-past it.
-
-**`test_multisheet_workbook.py`** covers the workbook reader and what an acquisition is worth.
-It builds a two-sheet "By Benefit Type" fixture with the real export's shape — trailing-colon
-column names, repeated headers, nested `Grant` / `Vest Schedule` / `Tax Withholding` /
-`Sellable Shares` records tied by grant number — and asserts every worksheet is read and named
-in the census, hidden tabs included, while an instructions tab is reported as skipped without
-stopping the run. A sheet whose rows parse as transactions but whose header does not is
-blocking, not skipped. For pricing it asserts FMV beats the discounted purchase price, that a
-paid-price-only section says so loudly, that a disposal is valued at what it executed at, and
-that `Est. Market Value` and `Est. Taxable Gain/Loss` are refused as any concept at all. A
-final block re-parses every fixture that already worked and asserts nothing about their output
-moved.
+**`test_multisection_adapter.py`** and **`test_multisheet_workbook.py`** exercise the export
+reader against the shapes in [Normalize each broker export](#1-normalize-each-broker-export):
+per-section column resolution, multi-sheet workbooks, gross/withheld/net sell-to-cover
+handling, FMV over discounted price, and the loud-failure guarantee on any row that cannot
+be read.
 
 **`test_rules_registry.py`** is the enforcement half of the rules registry — see
-[Where every statutory figure comes from](#where-every-statutory-figure-comes-from). It
-asserts every entry cites an official source and cites no aggregator, that review classes
-and the assessment years they are stated for agree, that a build past the newest registry is
-refused while an earlier one runs with a banner, that `docs/ANNUAL-REVIEW.md` still lists
-every `annual` entry with its source link, and — the check that catches real drift — that
-the arithmetic reads the registry, by driving a sale one day either side of the long-term
-threshold rather than reading the constant back. `ITRPREP_CHECK_SOURCE_URLS=1` additionally
-HEADs every cited URL, failing only on 404 or 410, since the department's site answers 403
-to any non-browser client and that says nothing about whether the page exists.
+[Where every statutory figure comes from](#where-every-statutory-figure-comes-from) —
+including the drift check that the arithmetic actually reads the registry.
+`ITRPREP_CHECK_SOURCE_URLS=1` additionally HEADs every cited URL, failing only on 404 or
+410, since the department's site answers 403 to any non-browser client.
 
 **`test_unlock_credentials.py`** is adversarial rather than functional: it tries to make a
 document password escape the process. It builds a genuinely encrypted PDF, fails to open it
 with the wrong credential, then searches the error text, the formatted traceback, and the
 CLI's combined stdout and stderr for both the correct password and the wrong one. It asserts
-`Credential` withholds its value from `repr`, `str`, f-strings, `%s` formatting and enclosing
-containers; that `--list-credentials` prints no value and not even the PAN or date of birth;
-that a file named after its own password still does not open when nothing is declared; and
-that decrypted output lands 0600 in an owner-only directory git ignores. The PDF and workbook
-round-trips skip without the optional unlock extras, so the suite still runs on a base
-install.
+`Credential` withholds its value from `repr`, `str`, f-strings, `%s` formatting and
+enclosing containers, and that decrypted output lands 0600 in an owner-only directory git
+ignores. The PDF and workbook round-trips skip without the optional unlock extras.
+
+**`test_capgain.py`**, **`test_mf_input.py`** and **`test_cas_pdf.py`** cover the mutual
+fund pipeline: the FIFO engine's grandfathering arithmetic (section 90(7)), the CSV
+contract and financial-year window, and the CAS statement transcription, including the
+runtime-generated synthetic CAS PDF it is tested against.
 
 ### The Excel round-trip, live, on all three utilities
 
@@ -1808,9 +1742,9 @@ Not inferred — **run**, with `itr-prep import`, and verified cell by cell:
 
 | Utility | Reporting year | A3 rows | A2 rows | Result |
 |---|---|---|---|---|
-| `ITR2_AY_26-27_V1.2.xlsm` | 2025 | 11 | 3 | **PASS** |
-| `ITR2_AY_25-26_V1.2.xlsm` | 2024 | 5 | 2 | **PASS** |
-| `ITR2_AY_24-25_V1.8.xlsm` | 2023 | 2 | 1 | **PASS** |
+| `ITR2_AY_26-27_V1.2.xlsm` | 2025 | 12 | 3 | **PASS** |
+| `ITR2_AY_25-26_V1.2.xlsm` | 2024 | 6 | 3 | **PASS** |
+| `ITR2_AY_24-25_V1.8.xlsm` | 2023 | 3 | 2 | **PASS** |
 
 Every text field, date and rupee figure in every row matched the generated JSON, and the
 JSON's totals matched the audit CSV. This closes the last verification gap: the prior-year
@@ -1951,6 +1885,9 @@ itrprep/
   scope.py         what may be disclosed: the Indian-securities refusal, in one place
   host.py          the only module that knows the import step needs a Windows Excel
   unlock.py        .env-sourced document passwords that never leave the process
+  capgain.py       mutual fund FIFO lot engine: grandfathering, holding periods, bonus cost
+  mf_input.py      reads mf_schemes.csv / mf_transactions.csv, assembles Schedule 112A
+  cas_pdf.py       transcribes a CDSL CAS statement PDF into draft MF CSVs
   cli.py           command line
 rules/
   AY2026-27.json   every statutory figure, cited, classed stable or annual and tagged
@@ -1964,10 +1901,15 @@ docs/
   AI-ASSISTANCE.md       what a model may and may not do with a real filing's figures
 scripts/
   make_macos_import_test.py  builds that test's two JSON shapes over a 178-row Table A3
-  import_to_utility.py   the scripted import: fresh copy, COM drive, readback, save
+  macos_import_to_utility.py the macOS import: drives the Common Offline Utility via
+                             Accessibility, reads every Schedule FA row back from the
+                             utility's own upload JSON
+  import_to_utility.py   the Windows scripted import: fresh copy, COM drive, readback, save
   clear_modals.ps1       clear the splash form, VBA MsgBoxes and the Purview label dialog
   probe_workbook.ps1     inspect the utility's named ranges and lock state
   roundtrip.ps1          the original manual round-trip driver, kept for reference
+  pdf_to_csv.py          best-effort broker trade-confirmation PDFs -> CSV
+  check_no_real_data.py  the leak scan this repo runs on itself and in CI
 tests/
   synthetic/             the nasty-cases dataset + broker export fixtures (all invented)
   synthetic_split/       AVGO held through the July 2024 10-for-1 split
@@ -1993,7 +1935,7 @@ AGENTS.md                what an agent must read before it changes anything
 .env.example             the credential template; the real .env is gitignored
 ```
 
-All eight test suites are plain scripts with no test runner:
+All eleven test suites are plain scripts with no test runner:
 
 ```bash
 for t in tests/test_*.py; do .venv/bin/python "$t" || break; done
@@ -2061,7 +2003,7 @@ for t in tests/test_*.py; do .venv/bin/python "$t" || break; done
 otherwise in its own text. Indian mutual funds were built on 25 August 2026 and are marked
 as such below; the rest is neither implemented nor scheduled, and none of it should affect
 a decision to use this tool. What the tool does today is
-[Scope today](#scope-today-itr-2-only) and the rest of this README; if a claim appears here
+[Scope today](#scope-today-itr-2-with-schedule-fa-and-indian-mutual-fund-capital-gains) and the rest of this README; if a claim appears here
 and nowhere else, it is not built. Check the code before relying on any of it.
 
 - **Indian mutual funds — built 25 August 2026.** Capital gains on Indian mutual fund

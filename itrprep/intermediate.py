@@ -81,6 +81,23 @@ def _date(path: str, lineno: int, column: str, raw: str) -> dt.date:
     )
 
 
+def has_data_rows(path: str) -> bool:
+    """Does a CSV carry at least one non-blank data row beyond its header?
+
+    The CLI uses this to tell an MF-only portfolio's untouched transactions template
+    apart from a forgotten one, so it can skip the foreign pipeline without silencing
+    the "you forgot to fill this in" error for the case where the user genuinely
+    meant to."""
+    if not os.path.exists(path):
+        return False
+    with open(path, newline="", encoding="utf-8-sig") as fh:
+        reader = csv.DictReader(fh)
+        for row in reader:
+            if any((v or "").strip() for v in row.values()):
+                return True
+    return False
+
+
 def read_transactions(path: str) -> list[Transaction]:
     if not os.path.exists(path):
         raise DataError(f"transactions file not found: {path}")

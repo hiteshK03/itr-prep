@@ -12,10 +12,12 @@ import sys
 from . import (
     __version__,
     adapters,
+    capgain,
     doctor,
     emit,
     host,
     intermediate,
+    mf_input,
     positions,
     rules,
     scope,
@@ -66,6 +68,8 @@ def _work_paths(work_dir: str) -> dict[str, str]:
         "accounts": os.path.join(work_dir, "accounts.csv"),
         "overrides": os.path.join(work_dir, "prices_override.csv"),
         "cash": os.path.join(work_dir, "cash_balances.csv"),
+        "mf_schemes": os.path.join(work_dir, "mf_schemes.csv"),
+        "mf_transactions": os.path.join(work_dir, "mf_transactions.csv"),
     }
 
 
@@ -167,6 +171,9 @@ def cmd_init(args) -> int:
         (paths["accounts"], ACCOUNT_COLUMNS, EXAMPLE_ACCOUNTS),
         (paths["overrides"], ["ticker", "date", "close_usd"], EXAMPLE_OVERRIDES),
         (paths["cash"], CASH_COLUMNS, EXAMPLE_CASH),
+        (paths["mf_schemes"], mf_input.SCHEMES_COLUMNS, mf_input.EXAMPLE_SCHEMES),
+        (paths["mf_transactions"], mf_input.TRANSACTIONS_COLUMNS,
+         mf_input.EXAMPLE_TRANSACTIONS),
     ):
         if os.path.exists(path) and not args.force:
             print(f"  skipped (exists): {path}")
@@ -290,24 +297,82 @@ def cmd_build(args) -> int:
 
     paths = _work_paths(args.work)
     try:
-        transactions = intermediate.read_transactions(
-            args.transactions or paths["transactions"]
+        mf_schemes_path = args.mf_schemes or paths["mf_schemes"]
+        mf_transactions_path = args.mf_transactions or paths["mf_transactions"]
+        mf_active = (os.path.exists(mf_schemes_path)
+                     or os.path.exists(mf_transactions_path))
+        foreign_header_only = (
+            mf_active
+            and os.path.exists(paths["transactions"])
+            and not intermediate.has_data_rows(paths["transactions"])
         )
-        issuers = intermediate.read_issuers(args.issuers or paths["issuers"])
-        accounts = intermediate.read_accounts(args.accounts or paths["accounts"])
-        intermediate.cross_check(
-            transactions, issuers, accounts,
-            allow_indian_securities=args.allow_indian_securities,
-        )
-        cash_path = args.cash or paths["cash"]
-        cash_balances = intermediate.read_cash_balances(cash_path)
+        if foreign_header_only:
+            # An MF-only portfolio has no foreign transactions; the foreign files are
+            # templates the user left alone. Treat them as absent rather than as the
+            # "you forgot to fill these in" error the foreign pipeline raises.
+            transactions, issuers, accounts, cash_balances = [], {}, {}, {}
+            cash_path = args.cash or paths["cash"]
+        else:
+            transactions = intermediate.read_transactions(
+                args.transactions or paths["transactions"]
+            )
+            issuers = intermediate.read_issuers(args.issuers or paths["issuers"])
+            accounts = intermediate.read_accounts(args.accounts or paths["accounts"])
+            intermediate.cross_check(
+                transactions, issuers, accounts,
+                allow_indian_securities=args.allow_indian_securities,
+            )
+            cash_path = args.cash or paths["cash"]
+            cash_balances = intermediate.read_cash_balances(cash_path)
     except DataError as exc:
         print(f"\nInput data problem:\n\n{exc}\n", file=sys.stderr)
         return 1
 
+    # ---- Indian mutual fund capital gains (Schedule 112A) ----
+    # Runs whenever both MF files exist, independently of the foreign-asset
+    # computation: a portfolio can have fund gains and nothing in Schedule FA.
+    mf_rows_112a: list[dict] = []
+    mf_summary: list[str] = []
+    if mf_active:
+        try:
+            mf_ledgers = mf_input.load_ledgers(mf_schemes_path, mf_transactions_path)
+        except mf_input.MfInputError as exc:
+            print(f"\nMutual fund input problem:\n\n{exc}\n", file=sys.stderr)
+            return 1
+        if mf_ledgers:
+            missing = [k for k in capgain.REQUIRED_KEYS
+                       if k not in year_rules.entries]
+            if missing:
+                print(
+                    f"\nMutual fund problem: the AY {year_rules.assessment_year} "
+                    f"registry has no capital-gains entries "
+                    f"({', '.join(missing[:3])}{'...' if len(missing) > 3 else ''}).\n"
+                    "Those figures exist in rules/AY2027-28.json and later, under the "
+                    "Income-tax Act, 2025. Filing mutual fund gains for an earlier year "
+                    "means computing them against law nobody has checked here -- build "
+                    "for the year the registry covers, or add the cited entries first "
+                    "(docs/ANNUAL-REVIEW.md).\n",
+                    file=sys.stderr,
+                )
+                return 1
+            try:
+                mf_engine = capgain.Engine(year_rules)
+                window = capgain.fy_window(year_rules.financial_year)
+                mf_rows_112a, mf_summary = mf_input.run_engine(
+                    mf_ledgers, mf_engine, window
+                )
+            except capgain.MfError as exc:
+                print(f"\nMutual fund computation refused:\n\n{exc}\n", file=sys.stderr)
+                return 1
+
     try:
         fx = FxRates.load(args.fx_cache)
-        fx.assert_covers_year(args.year)
+        # The year-end coverage assert only bites when there is something foreign to
+        # convert. An MF-only mid-year build has no foreign transactions and no cash
+        # balances, and refusing it for a 31 December rate that does not exist yet
+        # would make the mutual fund pipeline unusable before New Year's Eve.
+        if transactions or cash_balances:
+            fx.assert_covers_year(args.year)
     except FxError as exc:
         print(f"\nFX problem:\n\n{exc}\n", file=sys.stderr)
         return 1
@@ -334,10 +399,12 @@ def cmd_build(args) -> int:
 
     _report_splits(split_scan, args.split_basis)
 
-    if not rows:
+    if not rows and not mf_rows_112a:
         print(
             f"No holding was held at any time during calendar {args.year}, so Schedule "
-            f"FA has no rows for that year. Check the year and your transaction dates.",
+            f"FA has no rows for that year, and no mutual fund sale lands in financial "
+            f"year {year_rules.financial_year}. Check the year and your transaction "
+            f"dates.",
             file=sys.stderr,
         )
         return 1
@@ -355,6 +422,13 @@ def cmd_build(args) -> int:
         document = emit.to_prefill_format(schedule_fa)
     else:
         document = emit.wrap_itr(schedule_fa, merge_into=merge_into)
+        if mf_rows_112a:
+            # Schedule 112A is a sibling of Schedule FA inside ITR2, so it goes into
+            # the assembled document the same way Schedule FA does. The prefill format
+            # is Schedule-FA-specific and does not carry it.
+            document["ITR"]["ITR2"]["Schedule112A"] = mf_input.build_schedule_112a(
+                mf_rows_112a
+            )
 
     os.makedirs(os.path.dirname(os.path.abspath(args.out)) or ".", exist_ok=True)
     emit.dump_json(document, args.out)
@@ -393,12 +467,24 @@ def cmd_build(args) -> int:
             year_rules=year_rules,
         ))
         fh.write("\n")
+        if mf_summary:
+            fh.write("Indian mutual fund capital gains (financial year "
+                     f"{year_rules.financial_year}; Schedule 112A rows are in the "
+                     "JSON, everything else is the utility's computation):\n")
+            for line in mf_summary:
+                fh.write(f"  {line}\n")
+            fh.write("\n")
 
     a3 = schedule_fa.get("DtlsForeignEquityDebtInterest", [])
     a2 = schedule_fa.get("DtlsForeignCustodialAcc", [])
     print(f"Calendar year {args.year}  (1 Jan {args.year} - 31 Dec {args.year})")
     print(f"  Table A3 rows (foreign equity/debt) : {len(a3)}")
     print(f"  Table A2 rows (custodial accounts)  : {len(a2)}")
+    if mf_rows_112a:
+        total_balance = sum(r["Balance"] for r in mf_rows_112a)
+        print(f"  Schedule 112A rows (MF LTCG)        : {len(mf_rows_112a)} "
+              f"(FY {year_rules.financial_year})")
+        print(f"  Schedule 112A total LTCG            : INR {total_balance:,}")
     print(f"  peak basis                          : {args.peak_basis}")
     print(f"  JSON                                : {args.out}")
     print(f"  audit trail                         : {report_path}")
@@ -1253,6 +1339,13 @@ def build_parser() -> argparse.ArgumentParser:
                               "INR product directly (more conservative)")
     p_build.add_argument("--cash", default="",
                          help="cash_balances.csv (default <work>/cash_balances.csv)")
+    p_build.add_argument("--mf-schemes", default="",
+                         help="mf_schemes.csv: scheme declarations (default "
+                              "<work>/mf_schemes.csv). Present + non-empty = the MF "
+                              "capital gains pipeline runs")
+    p_build.add_argument("--mf-transactions", default="",
+                         help="mf_transactions.csv: purchases/bonuses/sales (default "
+                              "<work>/mf_transactions.csv)")
     p_build.add_argument("--split-basis", default=None, choices=splits.SPLIT_BASES,
                          help="declare how quantities are stated where a holding spans "
                               "a stock split. current = already restated post-split; "

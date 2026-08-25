@@ -69,8 +69,12 @@ ITR-2_*Main*.json
 /*holdings*
 /downloads/
 /Downloads/
-/ITR*/
-/ITR*.exe
+# Personal ITR data folders. Require a DIGIT after ITR so this can never match the
+# itrprep/ package on macOS's case-insensitive filesystem (a bare /ITR*/ swallows
+# itrprep/ and silently drops new module files from git -- that happened once already,
+# 25 Aug 2026, to capgain.py / mf_input.py / cas_pdf.py).
+/ITR[0-9]*/
+/ITR[0-9]*.exe
 
 # --- Credentials ------------------------------------------------------------
 # .env holds document passwords, and the PAN and date of birth used to derive them.

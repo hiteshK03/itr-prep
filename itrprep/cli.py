@@ -1276,6 +1276,45 @@ def cmd_validate(args) -> int:
     return 0
 
 
+def cmd_cas_import(args) -> int:
+    """Transcribe a Consolidated Account Statement PDF into the two MF CSVs.
+
+    The transcript is a DRAFT: classification is inferred from scheme names, units
+    held before the statement period are invisible, and every warning must be
+    reviewed before build. Nothing here computes tax.
+    """
+    from . import cas_pdf  # lazy: pymupdf is a dev dependency
+
+    try:
+        transcript = cas_pdf.transcribe_cas(args.pdf, password=args.password)
+    except cas_pdf.CasError as exc:
+        print(f"CAS problem:\n\n{exc}\n", file=sys.stderr)
+        return 1
+
+    print(cas_pdf.summarize(transcript))
+
+    try:
+        schemes_path, txns_path = cas_pdf.write_csvs(transcript, args.work)
+    except cas_pdf.CasError as exc:
+        print(f"CAS problem:\n\n{exc}\n", file=sys.stderr)
+        return 1
+
+    print(f"\nWrote draft CSVs:")
+    print(f"  {schemes_path}")
+    print(f"  {txns_path}")
+    print(
+        "\nBefore running build:\n"
+        "  1. Review every warning above.\n"
+        "  2. Confirm each scheme's classification in mf_schemes.csv -- it was\n"
+        "     guessed from the name, and the engine will not guess for you.\n"
+        "  3. Add fmv_2018_01_31 for any scheme whose units were bought on or\n"
+        "     before 31-01-2018 (grandfathering needs it).\n"
+        "  4. If the first transaction for a scheme is a sale, its earlier\n"
+        "     purchases are NOT in this statement -- add them from an older one."
+    )
+    return 0
+
+
 # ---------------------------------------------------------------- parser
 
 def build_parser() -> argparse.ArgumentParser:
@@ -1500,6 +1539,17 @@ def build_parser() -> argparse.ArgumentParser:
     p_val.add_argument("--year", type=int, default=None,
                        help="reporting calendar year, to pick that year's schema")
     p_val.set_defaults(func=cmd_validate)
+
+    p_cas = sub.add_parser(
+        "cas-import",
+        help="transcribe a CAS (consolidated account statement) PDF into the MF CSVs",
+    )
+    p_cas.add_argument("--pdf", required=True, help="path to the CAS PDF")
+    p_cas.add_argument("--password", default="",
+                       help="statement password (CDSL/CAMS use your registered PAN)")
+    p_cas.add_argument("--work", default="work",
+                       help="directory to write mf_schemes.csv / mf_transactions.csv into")
+    p_cas.set_defaults(func=cmd_cas_import)
 
     return parser
 

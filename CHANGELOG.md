@@ -13,6 +13,61 @@ notification changed it, because they may be filing an earlier year.
 
 ### Added
 
+- **CAS statement transcription (25 August 2026).** `itr-prep cas-import` reads a
+  Consolidated Account Statement PDF (the monthly CDSL statement, password = PAN) and
+  writes draft `mf_schemes.csv` / `mf_transactions.csv`. Layout verified against one real
+  statement kept outside the repo; validated in-repo by `tests/test_cas_pdf.py`, which
+  generates a synthetic CAS-shaped PDF at runtime -- the repo still carries no real
+  statement data. Switch-ins/outs, redemptions, purchases, the STT row (attached as the
+  sale's transfer expense), and the transaction reference are all transcribed; the demat
+  equity section is excluded; schemes are deduplicated by ISIN. Classification is guessed
+  from the scheme name (engine vocabulary, flagged in every warning) and the command
+  prints a four-point review checklist, because units held before the statement period and
+  grandfathering FMVs are not in any single statement. PyMuPDF is a dev dependency for
+  this; `pdfminer.six` cannot read the statement body (it extracts only page numbers).
+
+- **Indian mutual fund capital gains, end to end (25 August 2026).** `itrprep/capgain.py`
+  is the FIFO lot engine: holding periods under section 2(101) of the Income-tax Act, 2025
+  (twelve months equity-oriented, twenty-four default — exactly twelve months is still
+  short-term, because the statute says "not more than"), grandfathering under section 90(7)
+  (cost = higher of actual cost and lower of valuation-date FMV and proceeds, so it can
+  never manufacture a loss), bonus-unit cost of zero under section 90(6)(d), and no
+  indexation per the registry. Every figure is read from `rules/AY2027-28.json`; the six
+  entries it reads were flipped `research_only` → `read_by_code` and
+  `tests/test_rules_registry.py` pins exactly that split. `itrprep/mf_input.py` reads the
+  two new intermediate files `mf_schemes.csv` (scheme declarations: classification, listed
+  status, valuation-date FMV) and `mf_transactions.csv` (purchases, bonuses, sales), which
+  `itr-prep init` now templates. The engine classifies nothing and the contested
+  specified-mutual-fund entry stays unread; gains are reported for the registry's financial
+  year (earlier sales still consume lots); Schedule 112A rows are injected into the merged
+  return JSON and validated against the department's schema. Tests: `tests/test_capgain.py`
+  (40+ hand-computed checks against the official schema) and `tests/test_mf_input.py`.
+  Two honest limits, documented in the README roadmap: the pipeline covers AY 2027-28
+  onward (earlier years are 1961-Act years whose MF entries have not been written), and
+  ITD has not yet published the AY 2027-28 offline utility, so the utility round-trip that
+  Schedule FA enjoys cannot be run for these rows until they do.
+- **`--check-version` / version gate for the macOS utility import script.**
+  `scripts/macos_import_to_utility.py` now compares the installed utility build against the
+  portal's published version at startup, derives the accessibility process name from the
+  installed binary, and refuses to drive any build the verification kit has not passed on
+  (`VERIFIED_UTILITY_VERSION`), with `--force` as the documented escape hatch.
+
+### Changed
+
+- **KNOWN-ISSUES.md issue 1 decided (the Schedule 112A `multipleOf` float bug).** The
+  department's `multipleOf: 0.0001` on five per-unit fields was rejecting ~28% of legal
+  four-decimal values because jsonschema checks it in binary floats. Fixed by re-implementing
+  `multipleOf` in exact decimal (`itrprep/validate.py`), evaluated on the value's shortest
+  round-trip representation — the literal the department receives. Over-precise values still
+  fail; the department's schema file is never edited. The decision record names the four
+  rejected alternatives (rounding user figures, stripping the constraint, string
+  serialisation, filing anyway).
+
+### Fixed
+
+- `tests/synthetic/transactions.csv` restored — it had been accidentally overwritten with a
+  normalize-output format during the macOS utility work, which broke three doctor checks.
+
 - **`code_status` on every registry entry, and `itr-prep rules` groups its output by it.**
   The command printed all forty entries across the two registries identically — same value,
   same authority, same sources, same re-check instruction — with no signal about which ones any

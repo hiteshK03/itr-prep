@@ -125,27 +125,29 @@ done rather than about what is in the tree — which is exactly why it is writte
 
 ## Scope
 
-Foreign asset disclosure and the schedules that depend on it. **Not** regime comparison,
-Chapter VI-A deductions, presumptive taxation, crypto, portal browser automation or general
-ITR form selection. If a change is not about foreign assets, it does not belong here.
+Foreign asset disclosure and the schedules that depend on it, plus — since 25 August 2026,
+by explicit decision — **Indian mutual fund capital gains for ITR-2**. **Not** regime
+comparison, Chapter VI-A deductions, presumptive taxation, crypto, portal browser automation
+or general ITR form selection. A change that is not about foreign assets or Indian mutual
+fund capital gains does not belong here.
 
-The README's Roadmap names Indian mutual funds and the other ITR forms as directions the
-author may take. That is intent and it does not widen this rule: until one of them is actually
-built, verified and documented, a change reaching outside foreign assets still does not belong
-here.
+The mutual fund pipeline (`itrprep/capgain.py`, `itrprep/mf_input.py`) is subject to every
+discipline above, with two additions of its own:
 
-One qualification, added with `rules/AY2027-28.json`. That registry carries **cited entries
-for Indian mutual fund capital gains** — grandfathering, Specified Mutual Funds, both rates,
-holding periods and FIFO — because the research was done and a cited entry is cheaper to
-keep than to re-derive. **No code reads them and no pipeline computes them.** They are
-research committed in a form a test can check, not a feature. Building the pipeline is still
-a scope decision that has not been taken.
+- **The engine classifies nothing.** A fund's equity-oriented status and its valuation-date
+  FMV are caller declarations (`mf_schemes.csv`), because no statement this tool reads
+  carries either fact. The registry's specified-mutual-fund debt-threshold entry is
+  `contested` and stays unread until KNOWN-ISSUES.md issue 2 is settled against a primary
+  source.
+- **Gains belong to the financial year**, not the Schedule FA calendar year. The build
+  filters reported sales to the registry's FY window; earlier sales still consume lots.
 
 Every registry entry now says which of those it is, in a `code_status` field that
 `itr-prep rules` groups its output by: `read_by_code`, `hardcoded_at_call_site`, `not_read` or
-`research_only`. Only four entries per registry are `read_by_code`. If you add an entry, tag it
-honestly; if you wire an inert one up, retag it. `tests/test_rules_registry.py` greps
-`itrprep/` for every key and fails either way round, so an optimistic tag does not survive a
+`research_only`. The figures the arithmetic reads are a small minority of each registry. If
+you add an entry, tag it honestly; if you wire an inert one up, retag it.
+`tests/test_rules_registry.py` greps `itrprep/` for every key and fails either way round, so
+an optimistic tag does not survive a
 commit.
 
 The narrow scope is now **enforced at runtime, not just stated here.** An Indian mutual fund or

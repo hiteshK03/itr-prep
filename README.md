@@ -1,20 +1,24 @@
 # itr-prep — Schedule FA from broker exports, for the ITD ITR-2 Excel utility
 
-### Scope today: ITR-2 only
+### Scope today: ITR-2, with Schedule FA and Indian mutual fund capital gains
 
 This produces **Schedule FA** (foreign asset disclosure) and the Schedule CG, OS, FSI and TR
-figures that depend on it, for India's **ITR-2**, from US broker exports. That is the whole of
-what it does.
+figures that depend on it, for India's **ITR-2**, from US broker exports. Since 25 August
+2026 it also computes **capital gains on Indian mutual funds** (Schedule 112A for
+equity-oriented funds) from your own scheme declarations and transaction records, for
+assessment years from 2027-28 onward — the years governed by the Income-tax Act, 2025, whose
+figures live in [`rules/AY2027-28.json`](rules/AY2027-28.json).
 
-It does **not** prepare ITR-1, ITR-3 or ITR-4, and it does **not** cover Indian mutual funds,
-Indian-sourced capital gains, salary, house property, regime comparison or Chapter VI-A
-deductions. The name is deliberately broader than the tool, because the direction of travel is
-wider — but the direction is not the product. [Roadmap](#roadmap) says what is intended, and
-says plainly that none of it exists yet.
+It does **not** prepare ITR-1, ITR-3 or ITR-4, and it does **not** cover Indian equities,
+salary, house property, regime comparison or Chapter VI-A deductions. The name is
+deliberately broader than the tool, because the direction of travel is wider — but the
+direction is not the product. [Roadmap](#roadmap) says what is intended, and says plainly
+that none of it exists yet.
 
-Indian mutual funds and Indian equities are not merely unsupported: putting one in
-`transactions.csv` is now **refused**, because the alternative was disclosing an Indian asset
-in Schedule FA and producing a wrong return with no warning at all. See
+Indian mutual funds and Indian equities put into `transactions.csv` are **refused** there,
+because the alternative was disclosing an Indian asset in Schedule FA and producing a wrong
+return with no warning at all. Indian mutual funds have their own input files instead —
+`mf_schemes.csv` and `mf_transactions.csv`. See
 [Indian securities are refused](#indian-securities-are-refused).
 
 ## Quickstart
@@ -569,7 +573,8 @@ itr-prep init --work work
 ```
 
 Writes `work/transactions.csv`, `work/issuers.csv`, `work/accounts.csv`,
-`work/cash_balances.csv` and `work/prices_override.csv`, each with example rows marked
+`work/cash_balances.csv`, `work/prices_override.csv`, and the two mutual fund files —
+`work/mf_schemes.csv` and `work/mf_transactions.csv` — each with example rows marked
 `example row - delete me`. Delete those before building.
 
 ### 1. Normalize each broker export
@@ -1493,18 +1498,20 @@ it, and it must be re-verified before the registry is used for a later assessmen
 ### The registry is not a feature list
 
 Every entry also declares a **`code_status`**, and `itr-prep rules` groups its output by it.
-Four of twenty-eight entries in the AY 2027-28 registry are figures the arithmetic reads; the
-other twenty-four are cited law that nothing in this tool acts on. That distinction was
-invisible until now — every entry printed identically, with the same citations and the same
-re-check instruction — and its absence is what led the author of this tool to believe the
-mutual-fund support was implemented. It is not. It is research.
+Ten of twenty-eight entries in the AY 2027-28 registry are figures the arithmetic reads;
+the other eighteen are cited law that nothing in this tool acts on. That distinction was
+invisible until the `code_status` field existed — every entry printed identically, with the
+same citations and the same re-check instruction — and its absence is what led the author of
+this tool to believe the mutual-fund support was implemented before it was. Since 25 August
+2026 the mutual-fund entries the engine reads are `read_by_code`, and the distinction is
+enforced rather than asserted.
 
 | `code_status` | Entries per registry | What it means |
 |---|---|---|
-| `read_by_code` | 4 | The arithmetic reads this value out of the registry. `black_money_relief_threshold_inr` and `black_money_s43_penalty_inr` by `threshold`, `foreign_share_long_term_holding` by `positions` and `cli`, and the foreign tax credit deadline by `emit` |
+| `read_by_code` | 4 (AY 2026-27), 10 (AY 2027-28) | The arithmetic reads this value out of the registry. `black_money_relief_threshold_inr` and `black_money_s43_penalty_inr` by `threshold`, `foreign_share_long_term_holding` by `positions` and `cli`, the foreign tax credit deadline by `emit`, and — since the mutual fund pipeline — the grandfathering dates, holding periods, lot method, bonus cost and the indexation refusal read by `capgain` |
 | `hardcoded_at_call_site` | 6 | Describes what the code really does, but the code does not read it. Changing the entry changes nothing |
 | `not_read` | 2 | Nothing reads it and nothing acts on it. A recorded gap: `revised_return_deadline`, and `schedule_fa_reporting_period`, which is never cross-checked against the `--year` you pass |
-| `research_only` | 16 (AY 2027-28 only) | Cited law with no code behind it: the whole mutual-fund and capital-gains-rate block |
+| `research_only` | 10 (AY 2027-28 only) | Cited law with no code behind it yet: the rates and exemption (ss.196–198), the equity-oriented thresholds, and the contested Specified Mutual Fund definition |
 
 `tests/test_rules_registry.py` greps `itrprep/` for every key and fails if a `read_by_code`
 entry is not referenced there, or if an entry in any other class is. The classification would
@@ -1543,8 +1550,11 @@ Three things worth knowing without reading that table:
   months from the end of the tax year under section 263(5).
 - **The registry gained Indian mutual fund entries**, cited from the Gazette text:
   grandfathering (s.90(7)–(8)), Specified Mutual Funds (s.76), both capital gains rates
-  (ss.196–198), holding periods (s.2(101)) and FIFO (s.67(7)(c)). No code reads them, they are
-  all tagged `research_only`, and `itr-prep rules` prints them under a heading that says so.
+  (ss.196–198), holding periods (s.2(101)) and FIFO (s.67(7)(c)). Added as `research_only`;
+  six of them — the dates, periods, lot method, bonus cost and indexation figures — were
+  flipped to `read_by_code` on 25 August 2026 when `itrprep/capgain.py` started reading
+  them, and `tests/test_rules_registry.py` now pins exactly that split. The rest stay
+  `research_only`, and `itr-prep rules` prints them under a heading that says so.
   Two carry `implementation_trap` blocks that the test suite refuses to let anyone delete —
   AMFI's 31 January 2018 file has both a *Net Asset Value* and a *Repurchase Price* column
   and they differ on 4,756 of its 9,502 rows, and section 76 makes a Specified Mutual Fund
@@ -1889,7 +1899,14 @@ itr-prep unlock     [--input PATH] [--out-dir DIR] [--env-file FILE]
                   [--list-credentials]
 itr-prep rules      [--assessment-year YYYY-YY] [--annual-only]
 itr-prep validate   --json FILE [--schema FILE] [--year YYYY]
+itr-prep cas-import --pdf FILE [--password PW] [--work DIR]
 ```
+
+`cas-import` transcribes a Consolidated Account Statement PDF (the monthly CDSL/CAS
+statement; password is the investor's PAN) into draft `mf_schemes.csv` /
+`mf_transactions.csv` in `--work`. It infers each scheme's classification from the name
+and prints every caveat it found — the output is a draft to review, not an answer, and
+the command's closing checklist says exactly what to check before `build`.
 
 Path overrides are deliberately left out above — `--transactions`, `--issuers`, `--accounts`,
 `--overrides`, `--fx-cache`, `--price-cache` and `--schema` all point a command at a file
@@ -2040,21 +2057,31 @@ for t in tests/test_*.py; do .venv/bin/python "$t" || break; done
 
 ## Roadmap
 
-**Everything in this section is intent, not capability.** None of it is implemented, none of it
-is scheduled, and none of it should affect a decision to use this tool. What the tool does today
-is [Scope today](#scope-today-itr-2-only) and the rest of this README; if a claim appears here
+**Everything in this section is intent, not capability** — except where an item says
+otherwise in its own text. Indian mutual funds were built on 25 August 2026 and are marked
+as such below; the rest is neither implemented nor scheduled, and none of it should affect
+a decision to use this tool. What the tool does today is
+[Scope today](#scope-today-itr-2-only) and the rest of this README; if a claim appears here
 and nowhere else, it is not built. Check the code before relying on any of it.
 
-- **Indian mutual funds.** Capital gains on Indian mutual fund units, from a registrar or
-  broker capital-gains statement. This is a genuinely different problem from the one solved
-  here, not an extension of it: units are not lots of a foreign share, the holding-period and
-  equity-oriented treatment differ, grandfathering to 31 January 2018 applies, and none of it
-  touches Schedule FA. **The rules-registry entries now exist** —
-  [`rules/AY2027-28.json`](rules/AY2027-28.json) carries grandfathering, Specified Mutual
-  Funds, both rates, holding periods and FIFO, cited to the Income-tax Act, 2025 — but no
-  code reads them, they are all tagged `research_only`, and there are no fixtures. The registry
-  work was the cheap half. Until it is built, an Indian fund put into `transactions.csv` is
-  [refused](#indian-securities-are-refused) rather than misfiled.
+- **Indian mutual funds — built 25 August 2026.** Capital gains on Indian mutual fund
+  units now compute end to end: `itrprep/capgain.py` is the FIFO lot engine (grandfathering
+  to 31 January 2018 under section 90(7) of the Income-tax Act, 2025, holding periods under
+  section 2(101), bonus-unit cost under section 90(6)(d), every figure read from
+  `rules/AY2027-28.json`), and `itrprep/mf_input.py` reads `mf_schemes.csv` and
+  `mf_transactions.csv`, which `itr-prep init` templates. The engine classifies nothing: a
+  fund's equity-oriented status and its valuation-date FMV are caller declarations, and the
+  specified-mutual-fund entry stays `contested` and unread until KNOWN-ISSUES.md issue 2 is
+  settled. Output: Schedule 112A rows inside the merged return JSON, validated against the
+  department's schema, plus the Schedule CG aggregates in the summary file. Two honest
+  limits remain: it covers AY 2027-28 onward (earlier years are 1961-Act years whose MF
+  entries nobody has written), and ITD has not yet published the AY 2027-28 offline utility,
+  so the round-trip through the utility — the verification Schedule FA has — cannot be run
+  until they do.
+- **Indian equities.** The sibling problem: same Schedule CG/112A destination, grandfathering
+  again, INR cost basis, no FX layer, and no `Profile` for any Indian broker's capital-gains
+  statement. The MF pipeline's engine is the natural home for most of it, but the broker
+  inputs and the equity-oriented declaration story still need building.
 - **ITR-1, ITR-3 and ITR-4.** The department's utilities for these share much of the ITR-2
   VBA, so the import mechanism may well carry over — but "may well" is the whole distance
   between this list and the [Verification](#verification) section. Nothing about the sheet

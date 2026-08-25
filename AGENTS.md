@@ -161,12 +161,13 @@ close the gap.
 
 ## Tests
 
-Eight suites, plain scripts rather than pytest, all runnable offline and all of which must
+Eleven suites, plain scripts rather than pytest, all runnable offline and all of which must
 pass before every commit:
 
 ```bash
 for t in tests/test_*.py; do .venv/bin/python "$t" || break; done
 ```
 
-CI runs the same set. Check counts are quoted in the README's Verification section — update
-them when you add checks.
+CI runs the same set. The README's Verification section describes what each suite covers;
+check counts are deliberately not quoted there, because they move as checks are added and a
+quoted number rots the moment it is written.

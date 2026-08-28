@@ -437,7 +437,7 @@ The gate is worth stating rather than implying, because the default answer is to
   remedy is needed.
 - **And an updated return would not cure such a default anyway.** Section 43's charging limb
   names sub-sections (1), (4) and (5) of section 139, never (8A) — see
-  [`docs/KNOWN-ISSUES.md`](docs/KNOWN-ISSUES.md) issue 3. A **revised** return under s.139(5)
+  [`docs/KNOWN-ISSUES.md`](KNOWN-ISSUES.md) issue 3. A **revised** return under s.139(5)
   *is* in that limb and does displace the omission, but it is only available while the current
   year's revision window is open; there is no counterpart for a year whose window has closed,
   which is every year this stage covers.

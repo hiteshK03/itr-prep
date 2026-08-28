@@ -1,7 +1,7 @@
 # Testing Schedule FA through the department's macOS Common Offline Utility
 
 **About 20 minutes on an Apple Silicon Mac.** It settles the two questions the README's
-[Where this runs](../README.md#where-this-runs) leaves open, and they decide whether next year's
+[Where this runs](PLATFORMS.md) leaves open, and they decide whether next year's
 filing has to touch Windows at all:
 
 1. **Which shape of JSON does the import accept** — the partial
@@ -158,9 +158,11 @@ and is worth the extra five minutes.
   macOS version, which of shapes A and B were accepted, the Table A3 row count you actually saw
   for each, the leading-zero result from 5.5, and the exact wording of anything the app said. The
   department ships new builds mid-season, so this answer expires.
-- [ ] **6.2** If it passed, update the two places in the README that currently say the macOS
+- [x] **6.2** ~~If it passed, update the two places in the README that currently say the macOS
   import is untested: the *What is not established* paragraph under
-  [Where this runs](../README.md#where-this-runs), and the matching *Known limitations* entry.
+  [Where this runs](PLATFORMS.md), and the matching *Known limitations* entry.~~
+  Done 25 August 2026: both places now record the tested outcome (the
+  [platform guide](PLATFORMS.md) and the README's *Known limitations*).
 
 ## If the import fails or truncates
 

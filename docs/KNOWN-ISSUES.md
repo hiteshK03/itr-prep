@@ -220,7 +220,7 @@ for AY 2025-26 or earlier is filed "subject to the time limits prescribed under 
 [Gazette](https://egazette.gov.in/WriteReadData/2025/265620.pdf). Finance Act, 2026 (No. 4 of
 2026), Part III section 160 —
 [Gazette](https://egazette.gov.in/WriteReadData/2026/271439.pdf). General Clauses Act, 1897,
-section 8 — [India Code](https://www.indiacode.nic.in/handle/123456789/2328). CBDT,
+section 8 — [India Code](https://indiacode.gov.in/handle/123456789/588172). CBDT,
 [*FAQs on Interplay and Transition from the Income Tax Act, 1961 to the Income Tax Act, 2025*](https://www.incometaxindia.gov.in/documents/81799/11848482/FAQs-on-Interplay-and-Transition.pdf).
 
 ---

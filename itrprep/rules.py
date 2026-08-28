@@ -106,6 +106,7 @@ OFFICIAL_HOSTS = (
     "indiabudget.gov.in",
     "egazette.gov.in",
     "indiacode.nic.in",
+    "indiacode.gov.in",
 )
 
 RULES_DIR = os.path.join(

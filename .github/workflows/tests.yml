@@ -87,14 +87,24 @@ jobs:
           done
           # A suite that is absent from the checkout passes vacuously, which is how
           # test_unlock_credentials.py went missing for a while: it matched a
-          # `*_credentials*` line in .gitignore and was never committed. Count them.
-          if [ "$ran" -ne 8 ]; then
-            echo "::error::expected 8 suites, ran $ran -- one is missing from the checkout"
-            exit 1
-          fi
-          if [ "$asserted" -ne 8 ]; then
-            echo "::error::8 suites ran but only $asserted asserted anything"
-            exit 1
+          # `*_credentials*` line in .gitignore and was never committed. The tree itself
+          # cannot catch that -- the file is gone from it too -- so the manifest lives
+          # here. Adding a suite means adding its name to this list.
+          expected="test_validation_teeth.py test_pipeline.py test_splits_cash_threshold.py
+                    test_doctor_readback.py test_multisection_adapter.py
+                    test_multisheet_workbook.py test_rules_registry.py
+                    test_unlock_credentials.py test_capgain.py test_mf_input.py
+                    test_cas_pdf.py"
+          for s in $expected; do
+            if [ ! -f "tests/$s" ]; then
+              echo "::error::$s is missing from the checkout"
+              status=1
+            fi
+          done
+          expected_count=$(echo "$expected" | wc -w | tr -d ' ')
+          if [ "$asserted" -ne "$expected_count" ]; then
+            echo "::error::$expected_count suites are expected to assert, but only $asserted did"
+            status=1
           fi
           exit $status
 

@@ -47,6 +47,10 @@ jobs:
           # rather than skipping them. That suite is the proof a password cannot leak, and
           # a proof that skips in CI is not one.
           python -m pip install -r requirements-unlock.txt
+          # The CAS suite builds its own synthetic statement as a PDF before it can
+          # transcribe anything, and only PyMuPDF writes the page. Without it the suite
+          # dies on import rather than skipping, so install it here too.
+          python -m pip install pymupdf
 
       - name: Warm the offline caches
         # The suites run offline, but "offline" means "reads a cache", and a fresh
